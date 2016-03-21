@@ -24,3 +24,11 @@ grid_map_visualizations:
      scale: 0.03
      line_width: 0.001
      color: 16777215
+
+  - name: elevation_grid
+    type: occupancy_grid
+    params:
+      layer: elevation
+      data_min: -0.1
+      data_max: 1.15     
+          
