@@ -106,11 +106,16 @@ add_executable(
   src/sensor_processors/PerfectSensorProcessor.cpp
 )
 
-
 ## Specify libraries to link a library or executable target against
 target_link_libraries(
   ${PROJECT_NAME}
   ${catkin_LIBRARIES}
   ${SM_COMMON_LIBRARIES}
   ${SM_TIMING_LIBRARIES}
+)
+
+add_executable(odometry_to_pose_with_covariance src/odometry_to_pose_with_covariance.cpp)
+target_link_libraries(
+  odometry_to_pose_with_covariance
+  ${catkin_LIBRARIES}
 )
