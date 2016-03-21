@@ -119,3 +119,9 @@ target_link_libraries(
   odometry_to_pose_with_covariance
   ${catkin_LIBRARIES}
 )
+
+add_executable(pose_to_pose_with_covariance src/pose_to_pose_with_covariance.cpp)
+target_link_libraries(
+  pose_to_pose_with_covariance
+  ${catkin_LIBRARIES}
+)
