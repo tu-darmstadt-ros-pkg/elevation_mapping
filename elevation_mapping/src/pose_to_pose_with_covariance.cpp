@@ -22,7 +22,7 @@ public:
 
     pose_cov_pub_ = nodeHandle.advertise<geometry_msgs::PoseWithCovarianceStamped>("/pose_cov", 3, false);
 
-    odom_sub_ = nodeHandle.subscribe("/robot_pose", 1, &PoseToPoseCovStamped::poseCallback, this);
+    pose_sub_ = nodeHandle.subscribe("/robot_pose", 1, &PoseToPoseCovStamped::poseCallback, this);
 
     out_msg_.pose.covariance[0] = 0.05;
     out_msg_.pose.covariance[7] = 0.05;
@@ -44,7 +44,7 @@ public:
 
 protected:
   ros::Publisher pose_cov_pub_;
-  ros::Subscriber odom_sub_;
+  ros::Subscriber pose_sub_;
   
   geometry_msgs::PoseWithCovarianceStamped out_msg_;
 
