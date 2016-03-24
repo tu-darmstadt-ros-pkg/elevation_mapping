@@ -7,7 +7,7 @@
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "map_combiner");
-  ros::NodeHandle nodeHandle("~");
+  //ros::NodeHandle nodeHandle("~");
   map_combiner::MapCombiner mc;
 
   ros::spin();

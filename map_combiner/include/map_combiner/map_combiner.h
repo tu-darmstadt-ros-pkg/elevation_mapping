@@ -7,6 +7,8 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
+#include <geometry_msgs/PoseStamped.h>
+
 
 // Kindr
 //#include <kindr/poses/PoseEigen.hpp>
@@ -27,9 +29,33 @@ class MapCombiner
   /*!
    * Constructor.
    */
-  MapCombiner()
-  {}
+  MapCombiner();
 
+
+  bool combineMaps();
+
+protected:
+  void staticMapCallback(const nav_msgs::OccupancyGridConstPtr& msg);
+  void localElevationMapCallback(const grid_map_msgs::GridMapConstPtr& msg);
+
+  void poseCallback(const geometry_msgs::PoseStampedConstPtr& msg);
+
+
+  ros::Subscriber static_map_sub_;
+  ros::Subscriber local_elevation_map_sub_;
+
+  ros::Subscriber pose_sub_;
+
+  ros::Publisher fused_map_pub_;
+  ros::Publisher fused_ros_map_pub_;
+
+
+  grid_map::GridMap static_map_;
+
+  //! Fused elevation map as grid map.
+  grid_map::GridMap local_elevation_map_;
+
+  geometry_msgs::PoseStampedConstPtr robot_pose_;
 };
 
 } /* namespace */
