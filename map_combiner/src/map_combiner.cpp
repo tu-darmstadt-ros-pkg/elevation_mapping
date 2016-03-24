@@ -18,7 +18,9 @@ MapCombiner::MapCombiner()
 
 void MapCombiner::staticMapCallback(const nav_msgs::OccupancyGridConstPtr& msg)
 {
-  grid_map::GridMapRosConverter::fromOccupancyGrid(*msg, "occupancy", static_map_);
+  grid_map::GridMapRosConverter::fromOccupancyGrid(*msg, "occupancy", static_map_retrieved_);
+
+  static_map_fused_ = static_map_retrieved_;
 }
 
 void MapCombiner::localElevationMapCallback(const grid_map_msgs::GridMapConstPtr& msg)
@@ -58,18 +60,18 @@ bool MapCombiner::combineMaps()
 
   std::cout << "local_pos: " << local_position << " length: " << local_length << "\n";
 
-  const grid_map::Length& static_length = static_map_.getLength();
-  const grid_map::Position& static_position = static_map_.getPosition();
+  const grid_map::Length& static_length = static_map_retrieved_.getLength();
+  const grid_map::Position& static_position = static_map_retrieved_.getPosition();
 
   std::cout << "static_pos: " << static_position << " length: " << static_length << "\n";
 
 
 
 
-  this->static_map_.extendToInclude(local_elevation_map_);
+  this->static_map_retrieved_.extendToInclude(local_elevation_map_);
 
   bool submap_create_success;
-  grid_map::GridMap static_cut = this->static_map_.getSubmap(local_position, local_length, submap_create_success);
+  grid_map::GridMap static_cut = this->static_map_retrieved_.getSubmap(local_position, local_length, submap_create_success);
 
 
 
@@ -87,13 +89,19 @@ bool MapCombiner::combineMaps()
   grid_map::Matrix& static_cut_data = static_cut["occupancy"];
 
 
-  for (grid_map::GridMapIterator iterator(local_elevation_map_); !iterator.isPastEnd(); ++iterator) {
+  for (grid_map::GridMapIterator iterator(static_cut); !iterator.isPastEnd(); ++iterator) {
       const grid_map::Index index(*iterator);
+
+      grid_map::Position position;
+      static_cut.getPosition(index, position);
+
+      grid_map::Index elev_index;
+      local_elevation_map_.getIndex(position, elev_index);
 
       //std::cout << "re: " << robot_elevation << " elev: " << elev_data(index(0), index(1)) << "\n";
 
       //if (static_data(index(0), index(1)) < 0.001){
-        if ( std::abs( robot_elevation - elev_data(index(0), index(1)) ) > 0.38 ){
+        if ( std::abs( robot_elevation - elev_data(elev_index(0), elev_index(1)) ) > 0.15 ){
           static_cut_data(index(0), index(1)) = 100.0;
         }
 
@@ -101,11 +109,11 @@ bool MapCombiner::combineMaps()
   }
 
 
-  static_map_.addDataFrom(static_cut, true, true, true);
+  static_map_fused_.addDataFrom(static_cut, true, true, true);
 
   if (fused_map_pub_.getNumSubscribers() > 0){
     grid_map_msgs::GridMap msg;
-    grid_map::GridMapRosConverter::toMessage(static_map_, msg);
+    grid_map::GridMapRosConverter::toMessage(static_map_fused_, msg);
     fused_map_pub_.publish(msg);
   }
 
@@ -113,7 +121,7 @@ bool MapCombiner::combineMaps()
     nav_msgs::OccupancyGrid msg;
     msg.header.frame_id = "world";
     msg.header.stamp = ros::Time::now();
-    grid_map::GridMapRosConverter::toOccupancyGrid(static_map_, "occupancy", 0.0, 100.0, msg);
+    grid_map::GridMapRosConverter::toOccupancyGrid(static_map_fused_, "occupancy", 0.0, 100.0, msg);
     fused_ros_map_pub_.publish(msg);
   }
 

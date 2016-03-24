@@ -50,7 +50,8 @@ protected:
   ros::Publisher fused_ros_map_pub_;
 
 
-  grid_map::GridMap static_map_;
+  grid_map::GridMap static_map_retrieved_;
+  grid_map::GridMap static_map_fused_;
 
   //! Fused elevation map as grid map.
   grid_map::GridMap local_elevation_map_;
