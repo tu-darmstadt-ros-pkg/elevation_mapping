@@ -19,11 +19,12 @@
 
 // ROS (time)
 #include <ros/ros.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 namespace map_combiner {
 
 /*!
- * Elevation map stored as grid map handling elevation height, variance, color etc.
+ * Combines grid map data from a premade static map and a rolling elevation map
  */
 class MapCombiner
 {
@@ -43,6 +44,8 @@ protected:
 
   void poseCallback(const geometry_msgs::PoseStampedConstPtr& msg);
 
+  void initialPoseCallback(const geometry_msgs::PoseWithCovarianceStamped pose);
+
   void dynRecParamCallback(map_combiner::MapCombinerConfig &config, uint32_t level);
 
 
@@ -50,9 +53,12 @@ protected:
   ros::Subscriber local_elevation_map_sub_;
 
   ros::Subscriber pose_sub_;
+  ros::Subscriber initial_pose_sub_;
 
   ros::Publisher fused_map_pub_;
   ros::Publisher fused_ros_map_pub_;
+
+  ros::ServiceClient reset_elev_map_service_client_;
 
 
   grid_map::GridMap static_map_retrieved_;

@@ -1,5 +1,6 @@
 #include <map_combiner/map_combiner.h>
 
+#include <std_srvs/Empty.h>
 
 namespace map_combiner{
 
@@ -9,14 +10,18 @@ MapCombiner::MapCombiner()
 
   dyn_rec_server_.setCallback(boost::bind(&MapCombiner::dynRecParamCallback, this, _1, _2));
 
-  static_map_sub_ = pnh.subscribe("/map", 1, &MapCombiner::staticMapCallback, this);
-  local_elevation_map_sub_ = pnh.subscribe("/elevation_mapping/elevation_map", 1, &MapCombiner::localElevationMapCallback, this);
-
   pose_sub_ = pnh.subscribe("/robot_pose", 1, &MapCombiner::poseCallback, this);
 
 
   fused_map_pub_ = pnh.advertise<grid_map_msgs::GridMap>("/map_fused_grid_map", 1, true);
   fused_ros_map_pub_ = pnh.advertise<nav_msgs::OccupancyGrid>("map_fused", 1, true);
+
+  static_map_sub_ = pnh.subscribe("/map", 1, &MapCombiner::staticMapCallback, this);
+  local_elevation_map_sub_ = pnh.subscribe("/elevation_mapping/elevation_map", 1, &MapCombiner::localElevationMapCallback, this);
+
+  initial_pose_sub_ = pnh.subscribe("/initialpose", 1, &MapCombiner::initialPoseCallback, this);
+
+  reset_elev_map_service_client_ = pnh.serviceClient<std_srvs::Empty>("/elevation_mapping/clear_map");
 }
 
 void MapCombiner::staticMapCallback(const nav_msgs::OccupancyGridConstPtr& msg)
@@ -39,7 +44,7 @@ void MapCombiner::poseCallback(const geometry_msgs::PoseStampedConstPtr& msg)
 
 bool MapCombiner::combineMaps()
 {
-  ROS_INFO("Combine started");
+  ROS_DEBUG("Combine started");
   if (!robot_pose_.get()){
     ROS_WARN("Cannot retrieve robot pose in combineMaps, aborting.");
     return false;
@@ -50,7 +55,7 @@ bool MapCombiner::combineMaps()
   //  std::cout << layers[i] << "\n";
 
 
-  std::cout << "pose: " << robot_pose_->pose.position.x << " , " << robot_pose_->pose.position.y << "\n";
+  //std::cout << "pose: " << robot_pose_->pose.position.x << " , " << robot_pose_->pose.position.y << "\n";
 
   float robot_elevation = local_elevation_map_.atPosition("elevation", grid_map::Position(robot_pose_->pose.position.x, robot_pose_->pose.position.y));
 
@@ -130,6 +135,22 @@ bool MapCombiner::combineMaps()
 
 
   return true;
+}
+
+void MapCombiner::initialPoseCallback(const geometry_msgs::PoseWithCovarianceStamped pose)
+{
+  ROS_INFO("Received intialpose, resetting map_combiner map");
+
+  static_map_fused_ = static_map_retrieved_;
+
+  std_srvs::Empty srv;
+  if (reset_elev_map_service_client_.call(srv)){
+    ROS_INFO("Succesfully called reset elevation map service from map_combiner");
+  }else{
+    ROS_WARN("Failed to call reset elevation map service from map_combiner!");
+  }
+
+
 }
 
 void MapCombiner::dynRecParamCallback(map_combiner::MapCombinerConfig &config, uint32_t level)

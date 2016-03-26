@@ -343,7 +343,7 @@ bool ElevationMap::fuse(const Eigen::Array2i& topLeftIndex, const Eigen::Array2i
 
   fusedMap_.setTimestamp(rawMapCopy.getTimestamp());
 
-  ROS_INFO("Elevation map has been fused in %f s.", Timing::getTotalSeconds(timerId));
+  ROS_DEBUG("Elevation map has been fused in %f s.", Timing::getTotalSeconds(timerId));
   ROS_DEBUG("Mean: %f s, Min: %f s, Max: %f s.", Timing::getMeanSeconds(timerId), Timing::getMinSeconds(timerId), Timing::getMaxSeconds(timerId));
   Timing::reset(timerId);
 
