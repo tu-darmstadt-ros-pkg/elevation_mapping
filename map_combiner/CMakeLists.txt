@@ -14,7 +14,10 @@ find_package(catkin REQUIRED COMPONENTS
   grid_map_ros
   nav_msgs
   roscpp
+  dynamic_reconfigure
 )
+
+generate_dynamic_reconfigure_options(cfg/MapCombiner.cfg)
 
 find_package(Eigen REQUIRED)
 find_package(PkgConfig REQUIRED)

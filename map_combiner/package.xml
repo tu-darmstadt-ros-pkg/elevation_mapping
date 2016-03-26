@@ -47,6 +47,7 @@
   <depend>grid_map_ros</depend>
   <depend>nav_msgs</depend>
   <depend>roscpp</depend>
+  <depend>dynamic_reconfigure</depend>
 
 
 

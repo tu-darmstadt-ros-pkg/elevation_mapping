@@ -9,6 +9,9 @@
 
 #include <geometry_msgs/PoseStamped.h>
 
+#include <dynamic_reconfigure/server.h>
+#include <map_combiner/MapCombinerConfig.h>
+
 
 // Kindr
 //#include <kindr/poses/PoseEigen.hpp>
@@ -40,6 +43,8 @@ protected:
 
   void poseCallback(const geometry_msgs::PoseStampedConstPtr& msg);
 
+  void dynRecParamCallback(map_combiner::MapCombinerConfig &config, uint32_t level);
+
 
   ros::Subscriber static_map_sub_;
   ros::Subscriber local_elevation_map_sub_;
@@ -57,6 +62,11 @@ protected:
   grid_map::GridMap local_elevation_map_;
 
   geometry_msgs::PoseStampedConstPtr robot_pose_;
+
+  double p_pos_obstacle_diff_threshold_;
+  double p_neg_obstacle_diff_threshold_;
+
+  dynamic_reconfigure::Server<map_combiner::MapCombinerConfig> dyn_rec_server_;
 };
 
 } /* namespace */
