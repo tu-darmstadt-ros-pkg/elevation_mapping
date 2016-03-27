@@ -48,6 +48,9 @@ protected:
 
   void dynRecParamCallback(map_combiner::MapCombinerConfig &config, uint32_t level);
 
+  void publishFusedNavGrid();
+  void callElevationMapReset();
+
 
   ros::Subscriber static_map_sub_;
   ros::Subscriber local_elevation_map_sub_;
@@ -71,6 +74,7 @@ protected:
 
   double p_pos_obstacle_diff_threshold_;
   double p_neg_obstacle_diff_threshold_;
+  bool p_fuse_elevation_map_;
 
   dynamic_reconfigure::Server<map_combiner::MapCombinerConfig> dyn_rec_server_;
 };

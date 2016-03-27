@@ -13,8 +13,8 @@ MapCombiner::MapCombiner()
   pose_sub_ = pnh.subscribe("/robot_pose", 1, &MapCombiner::poseCallback, this);
 
 
-  fused_map_pub_ = pnh.advertise<grid_map_msgs::GridMap>("/map_fused_grid_map", 1, true);
-  fused_ros_map_pub_ = pnh.advertise<nav_msgs::OccupancyGrid>("map_fused", 1, true);
+  fused_map_pub_ = pnh.advertise<grid_map_msgs::GridMap>("/fused_grid_map", 1, false);
+  fused_ros_map_pub_ = pnh.advertise<nav_msgs::OccupancyGrid>("/dynamic_map", 1, true);
 
   static_map_sub_ = pnh.subscribe("/map", 1, &MapCombiner::staticMapCallback, this);
   local_elevation_map_sub_ = pnh.subscribe("/elevation_mapping/elevation_map", 1, &MapCombiner::localElevationMapCallback, this);
@@ -29,12 +29,20 @@ void MapCombiner::staticMapCallback(const nav_msgs::OccupancyGridConstPtr& msg)
   grid_map::GridMapRosConverter::fromOccupancyGrid(*msg, "occupancy", static_map_retrieved_);
 
   static_map_fused_ = static_map_retrieved_;
+
+  // Elevation map is reset as is assumed on new static map also
+  // elevation data is outdated (i.e. floor change)
+  this->callElevationMapReset();
+  this->publishFusedNavGrid();
 }
 
 void MapCombiner::localElevationMapCallback(const grid_map_msgs::GridMapConstPtr& msg)
 {
-  grid_map::GridMapRosConverter::fromMessage(*msg, local_elevation_map_);
-  this->combineMaps();
+  if (p_fuse_elevation_map_){
+    grid_map::GridMapRosConverter::fromMessage(*msg, local_elevation_map_);
+
+    this->combineMaps();
+  }
 }
 
 void MapCombiner::poseCallback(const geometry_msgs::PoseStampedConstPtr& msg)
@@ -125,16 +133,28 @@ bool MapCombiner::combineMaps()
     fused_map_pub_.publish(msg);
   }
 
-  if (fused_ros_map_pub_.getNumSubscribers() > 0){
-    nav_msgs::OccupancyGrid msg;
-    msg.header.frame_id = "world";
-    msg.header.stamp = ros::Time::now();
-    grid_map::GridMapRosConverter::toOccupancyGrid(static_map_fused_, "occupancy", 0.0, 100.0, msg);
-    fused_ros_map_pub_.publish(msg);
-  }
-
+  this->publishFusedNavGrid();
 
   return true;
+}
+
+void MapCombiner::publishFusedNavGrid()
+{
+  nav_msgs::OccupancyGrid msg;
+  msg.header.frame_id = "world";
+  msg.header.stamp = ros::Time::now();
+  grid_map::GridMapRosConverter::toOccupancyGrid(static_map_fused_, "occupancy", 0.0, 100.0, msg);
+  fused_ros_map_pub_.publish(msg);
+}
+
+void MapCombiner::callElevationMapReset()
+{
+  std_srvs::Empty srv;
+  if (reset_elev_map_service_client_.call(srv)){
+    ROS_INFO("Succesfully called reset elevation map service from map_combiner");
+  }else{
+    ROS_WARN("Failed to call reset elevation map service from map_combiner!");
+  }
 }
 
 void MapCombiner::initialPoseCallback(const geometry_msgs::PoseWithCovarianceStamped pose)
@@ -143,20 +163,15 @@ void MapCombiner::initialPoseCallback(const geometry_msgs::PoseWithCovarianceSta
 
   static_map_fused_ = static_map_retrieved_;
 
-  std_srvs::Empty srv;
-  if (reset_elev_map_service_client_.call(srv)){
-    ROS_INFO("Succesfully called reset elevation map service from map_combiner");
-  }else{
-    ROS_WARN("Failed to call reset elevation map service from map_combiner!");
-  }
-
-
+  this->callElevationMapReset();
+  this->publishFusedNavGrid();
 }
 
 void MapCombiner::dynRecParamCallback(map_combiner::MapCombinerConfig &config, uint32_t level)
 {
   p_pos_obstacle_diff_threshold_ = config.pos_elev_diff_threshold;
   p_neg_obstacle_diff_threshold_ = config.neg_elev_diff_threshold;
+  p_fuse_elevation_map_          = config.fuse_elevation_map;
 
   ROS_INFO("MapCombiner params set: pos thresh: %f neg thresh: %f", p_pos_obstacle_diff_threshold_,  p_neg_obstacle_diff_threshold_);
 }
