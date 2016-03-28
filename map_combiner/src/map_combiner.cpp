@@ -12,7 +12,7 @@ MapCombiner::MapCombiner()
 
   dyn_rec_server_.setCallback(boost::bind(&MapCombiner::dynRecParamCallback, this, _1, _2));
 
-  debug_img_provider_.reset(new CvDebugProvider(pnh));
+  debug_img_provider_.reset(new CvDebugProvider(pnh, sensor_msgs::image_encodings::RGB8, true));
 
   pose_sub_ = pnh.subscribe("/robot_pose", 1, &MapCombiner::poseCallback, this);
 
@@ -34,6 +34,8 @@ void MapCombiner::staticMapCallback(const nav_msgs::OccupancyGridConstPtr& msg)
 
   static_map_fused_ = static_map_retrieved_;
 
+
+  this->updateInflatedLayer(static_map_retrieved_);
   // Elevation map is reset as is assumed on new static map also
   // elevation data is outdated (i.e. floor change)
   this->callElevationMapReset();
@@ -97,22 +99,22 @@ bool MapCombiner::combineMaps()
 
   cv::Mat static_cut_mat;
   grid_map::GridMapRosConverter::toCvImage(static_cut, "occupancy", static_cut_mat);
-  debug_img_provider_->addDebugImage(static_cut_mat);
+  //debug_img_provider_->addDebugImage(static_cut_mat);
 
   cv::Mat static_cut_mat_gray;
   cv::cvtColor(static_cut_mat, static_cut_mat_gray, CV_BGRA2GRAY);
 
 
 
-  int erosion_type = cv::MORPH_RECT;
+  int erosion_type = cv::MORPH_ELLIPSE;
   int erosion_size = 2;
   cv::Mat element = cv::getStructuringElement( erosion_type,
-                                       cv::Size( 2*erosion_size + 1, 2*erosion_size+1 ),
-                                       cv::Point( erosion_size, erosion_size ) );
+                                               cv::Size( 2*erosion_size + 1, 2*erosion_size+1 ),
+                                               cv::Point( erosion_size, erosion_size ) );
 
   cv::Mat static_cut_mat_eroded;
   cv::dilate(static_cut_mat_gray, static_cut_mat_eroded, element);
-  debug_img_provider_->addDebugImage(static_cut_mat_eroded);
+  //debug_img_provider_->addDebugImage(static_cut_mat_eroded);
 
   //eroded = 255 - eroded;
 
@@ -132,10 +134,13 @@ bool MapCombiner::combineMaps()
 
   grid_map::Matrix& elev_data   = local_elevation_map_["elevation"];
   grid_map::Matrix& static_cut_data = static_cut["occupancy"];
+  grid_map::Matrix& static_cut_inflated_data = static_cut["occupancy_inflated"];
 
   //@TODO This can be made faster as described in https://github.com/ethz-asl/grid_map/issues/53
   for (grid_map::GridMapIterator iterator(static_cut); !iterator.isPastEnd(); ++iterator) {
-      const grid_map::Index index(*iterator);
+    const grid_map::Index index(*iterator);
+
+    if (static_cut_inflated_data(index(0), index(1)) < 0.5){
 
       grid_map::Position position;
       static_cut.getPosition(index, position);
@@ -145,12 +150,17 @@ bool MapCombiner::combineMaps()
 
       //std::cout << "re: " << robot_elevation << " elev: " << elev_data(index(0), index(1)) << "\n";
 
-      //if (static_data(index(0), index(1)) < 0.001){
-        if ( std::abs( robot_elevation - elev_data(elev_index(0), elev_index(1)) ) > p_pos_obstacle_diff_threshold_ ){
-          static_cut_data(index(0), index(1)) = 100.0;
-        }
+      //std::cout << "re: " << robot_elevation << " elev: " << static_cut_inflated_data(index(0), index(1)) << "\n";
 
+      //if (static_data(index(0), index(1)) < 0.001){
+
+
+      //if ( std::abs( robot_elevation - elev_data(elev_index(0), elev_index(1)) ) > p_pos_obstacle_diff_threshold_ ){
+        static_cut_data(index(0), index(1)) = 100.0;
       //}
+    }
+
+    //}
   }
 
 
@@ -162,9 +172,15 @@ bool MapCombiner::combineMaps()
     fused_map_pub_.publish(msg);
   }
 
-  this->publishFusedNavGrid();
+  //this->publishFusedNavGrid();
 
-  debug_img_provider_->publishDebugImage();
+  nav_msgs::OccupancyGrid msg;
+  msg.header.frame_id = "world";
+  msg.header.stamp = ros::Time::now();
+  grid_map::GridMapRosConverter::toOccupancyGrid(static_map_retrieved_, "occupancy_inflated", 0.0, 1.0, msg);
+  fused_ros_map_pub_.publish(msg);
+
+  //debug_img_provider_->publishDebugImage();
 
   ROS_INFO("combineMaps took %f seconds", (ros::WallTime::now() - start_time).toSec());
 
@@ -207,6 +223,49 @@ void MapCombiner::dynRecParamCallback(map_combiner::MapCombinerConfig &config, u
   p_fuse_elevation_map_          = config.fuse_elevation_map;
 
   ROS_INFO("MapCombiner params set: pos thresh: %f neg thresh: %f", p_pos_obstacle_diff_threshold_,  p_neg_obstacle_diff_threshold_);
+}
+
+bool MapCombiner::updateInflatedLayer(grid_map::GridMap& map)
+{
+  cv::Mat static_map_cv;
+  grid_map::GridMapRosConverter::toCvImage(map, "occupancy", static_map_cv);
+  //debug_img_provider_->addDebugImage(static_cut_mat);
+
+  cv::Mat static_map_cv_gray;
+  cv::cvtColor(static_map_cv, static_map_cv_gray, CV_BGRA2GRAY);
+
+  int erosion_type = cv::MORPH_ELLIPSE;
+  int erosion_size = 2;
+  cv::Mat element = cv::getStructuringElement( erosion_type,
+                                               cv::Size( 2*erosion_size + 1, 2*erosion_size+1 ),
+                                               cv::Point( erosion_size, erosion_size ) );
+
+  cv_bridge::CvImage static_map_cv_eroded;
+  static_map_cv_eroded.encoding = sensor_msgs::image_encodings::MONO8;
+
+
+  cv::dilate(static_map_cv_gray, static_map_cv_eroded.image, element);
+
+  //cv::Mat tmp;
+
+  //cv::transpose(static_map_cv_eroded.image, tmp);
+  // cv::flip(tmp, tmp, 0);
+  //cv::flip(tmp, static_map_cv_eroded.image, 1);    // Flip on both axis at the same time.
+
+
+  debug_img_provider_->addDebugImage(static_map_cv_eroded.image);
+  debug_img_provider_->publishDebugImage();
+
+  //cv::Mat static_map_cv_eroded_uc8;
+  //cv_bridge::CvImage static_map_cv_eroded_uc8_image;
+
+  //cv::cvtColor(static_map_cv_eroded, static_map_cv_eroded_uc8, CV_GRAY2BGRA);
+
+  grid_map::GridMapRosConverter::addLayerFromImage(*static_map_cv_eroded.toImageMsg(), "occupancy_inflated", map);
+
+  ROS_INFO("grid size: %d %d, inflated size: %d %d", static_map_cv.size().width, static_map_cv.size().height, static_map_cv_eroded.image.size().width, static_map_cv_eroded.image.size().height);
+
+  return true;
 }
 
 }

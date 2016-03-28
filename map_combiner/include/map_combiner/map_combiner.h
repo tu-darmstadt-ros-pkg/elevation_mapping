@@ -56,6 +56,8 @@ protected:
   void publishFusedNavGrid();
   void callElevationMapReset();
 
+  bool updateInflatedLayer(grid_map::GridMap& map);
+
 
   ros::Subscriber static_map_sub_;
   ros::Subscriber local_elevation_map_sub_;
