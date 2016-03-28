@@ -2,6 +2,8 @@
 
 #include <std_srvs/Empty.h>
 
+#include <cv_image_proc/cv_image_convert.h>
+
 namespace map_combiner{
 
 MapCombiner::MapCombiner()
@@ -9,6 +11,8 @@ MapCombiner::MapCombiner()
   ros::NodeHandle pnh("~");
 
   dyn_rec_server_.setCallback(boost::bind(&MapCombiner::dynRecParamCallback, this, _1, _2));
+
+  debug_img_provider_.reset(new CvDebugProvider(pnh));
 
   pose_sub_ = pnh.subscribe("/robot_pose", 1, &MapCombiner::poseCallback, this);
 
@@ -52,6 +56,8 @@ void MapCombiner::poseCallback(const geometry_msgs::PoseStampedConstPtr& msg)
 
 bool MapCombiner::combineMaps()
 {
+  ros::WallTime start_time = ros::WallTime::now();
+
   ROS_DEBUG("Combine started");
   if (!robot_pose_.get()){
     ROS_WARN("Cannot retrieve robot pose in combineMaps, aborting.");
@@ -88,6 +94,29 @@ bool MapCombiner::combineMaps()
 
   bool submap_create_success;
   grid_map::GridMap static_cut = this->static_map_retrieved_.getSubmap(local_position, local_length, submap_create_success);
+
+  cv::Mat static_cut_mat;
+  grid_map::GridMapRosConverter::toCvImage(static_cut, "occupancy", static_cut_mat);
+  debug_img_provider_->addDebugImage(static_cut_mat);
+
+  cv::Mat static_cut_mat_gray;
+  cv::cvtColor(static_cut_mat, static_cut_mat_gray, CV_BGRA2GRAY);
+
+
+
+  int erosion_type = cv::MORPH_RECT;
+  int erosion_size = 2;
+  cv::Mat element = cv::getStructuringElement( erosion_type,
+                                       cv::Size( 2*erosion_size + 1, 2*erosion_size+1 ),
+                                       cv::Point( erosion_size, erosion_size ) );
+
+  cv::Mat static_cut_mat_eroded;
+  cv::dilate(static_cut_mat_gray, static_cut_mat_eroded, element);
+  debug_img_provider_->addDebugImage(static_cut_mat_eroded);
+
+  //eroded = 255 - eroded;
+
+
 
 
 
@@ -134,6 +163,10 @@ bool MapCombiner::combineMaps()
   }
 
   this->publishFusedNavGrid();
+
+  debug_img_provider_->publishDebugImage();
+
+  ROS_INFO("combineMaps took %f seconds", (ros::WallTime::now() - start_time).toSec());
 
   return true;
 }

@@ -48,6 +48,8 @@
   <depend>nav_msgs</depend>
   <depend>roscpp</depend>
   <depend>dynamic_reconfigure</depend>
+  <depend>cv_image_proc</depend>
+  <depend>cv_debug_provider</depend>
 
 
 

@@ -15,6 +15,8 @@ find_package(catkin REQUIRED COMPONENTS
   nav_msgs
   roscpp
   dynamic_reconfigure
+  cv_image_proc
+  cv_debug_provider
 )
 
 generate_dynamic_reconfigure_options(cfg/MapCombiner.cfg)

@@ -21,6 +21,11 @@
 #include <ros/ros.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 
+
+#include <cv_debug_provider/cv_debug_provider.h>
+
+
+
 namespace map_combiner {
 
 /*!
@@ -77,6 +82,8 @@ protected:
   bool p_fuse_elevation_map_;
 
   dynamic_reconfigure::Server<map_combiner::MapCombinerConfig> dyn_rec_server_;
+
+  boost::shared_ptr<CvDebugProvider> debug_img_provider_;
 };
 
 } /* namespace */
