@@ -73,11 +73,11 @@ bool MapCombiner::combineMaps()
 
   //std::cout << "pose: " << robot_pose_->pose.position.x << " , " << robot_pose_->pose.position.y << "\n";
 
-  float robot_elevation = local_elevation_map_.atPosition("elevation", grid_map::Position(robot_pose_->pose.position.x, robot_pose_->pose.position.y));
+  //float robot_elevation = local_elevation_map_.atPosition("elevation", grid_map::Position(robot_pose_->pose.position.x, robot_pose_->pose.position.y));
 
-  if (std::isnan(robot_elevation)){
-    robot_elevation = robot_pose_->pose.position.z - 0.18;
-  }
+  //if (std::isnan(robot_elevation)){
+  float robot_elevation = robot_pose_->pose.position.z - 0.1;
+  //}
 
   const grid_map::Length& local_length = local_elevation_map_.getLength();
   const grid_map::Position& local_position = local_elevation_map_.getPosition();
@@ -155,9 +155,9 @@ bool MapCombiner::combineMaps()
       //if (static_data(index(0), index(1)) < 0.001){
 
 
-      //if ( std::abs( robot_elevation - elev_data(elev_index(0), elev_index(1)) ) > p_pos_obstacle_diff_threshold_ ){
+      if ( std::abs( robot_elevation - elev_data(elev_index(0), elev_index(1)) ) > p_pos_obstacle_diff_threshold_ ){
         static_cut_data(index(0), index(1)) = 100.0;
-      //}
+      }
     }
 
     //}
@@ -172,17 +172,19 @@ bool MapCombiner::combineMaps()
     fused_map_pub_.publish(msg);
   }
 
-  //this->publishFusedNavGrid();
+  this->publishFusedNavGrid();
 
+  /*
   nav_msgs::OccupancyGrid msg;
   msg.header.frame_id = "world";
   msg.header.stamp = ros::Time::now();
   grid_map::GridMapRosConverter::toOccupancyGrid(static_map_retrieved_, "occupancy_inflated", 0.0, 1.0, msg);
   fused_ros_map_pub_.publish(msg);
+  */
 
   //debug_img_provider_->publishDebugImage();
 
-  ROS_INFO("combineMaps took %f seconds", (ros::WallTime::now() - start_time).toSec());
+  ROS_DEBUG("combineMaps took %f seconds", (ros::WallTime::now() - start_time).toSec());
 
   return true;
 }
