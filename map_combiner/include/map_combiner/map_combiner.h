@@ -44,7 +44,7 @@ class MapCombiner
   bool combineMaps();
 
 protected:
-  void staticMapCallback(const nav_msgs::OccupancyGridConstPtr& msg);
+  void staticMapCallback(const nav_msgs::OccupancyGrid& msg);
   void localElevationMapCallback(const grid_map_msgs::GridMapConstPtr& msg);
 
   void poseCallback(const geometry_msgs::PoseStampedConstPtr& msg);
@@ -79,8 +79,8 @@ protected:
 
   geometry_msgs::PoseStampedConstPtr robot_pose_;
 
-  double p_pos_obstacle_diff_threshold_;
-  double p_neg_obstacle_diff_threshold_;
+  double p_obstacle_diff_threshold_;
+  double p_pose_height_offset_;
   bool p_fuse_elevation_map_;
 
   dynamic_reconfigure::Server<map_combiner::MapCombinerConfig> dyn_rec_server_;

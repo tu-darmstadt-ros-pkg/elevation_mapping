@@ -14,23 +14,25 @@ MapCombiner::MapCombiner()
 
   debug_img_provider_.reset(new CvDebugProvider(pnh, sensor_msgs::image_encodings::RGB8, true));
 
-  pose_sub_ = pnh.subscribe("/robot_pose", 1, &MapCombiner::poseCallback, this);
 
 
   fused_map_pub_ = pnh.advertise<grid_map_msgs::GridMap>("/fused_grid_map", 1, false);
   fused_ros_map_pub_ = pnh.advertise<nav_msgs::OccupancyGrid>("/dynamic_map", 1, true);
 
-  static_map_sub_ = pnh.subscribe("/map", 1, &MapCombiner::staticMapCallback, this);
-  local_elevation_map_sub_ = pnh.subscribe("/elevation_mapping/elevation_map", 1, &MapCombiner::localElevationMapCallback, this);
+
+  reset_elev_map_service_client_ = pnh.serviceClient<std_srvs::Empty>("/elevation_mapping/clear_map");
 
   initial_pose_sub_ = pnh.subscribe("/initialpose", 1, &MapCombiner::initialPoseCallback, this);
 
-  reset_elev_map_service_client_ = pnh.serviceClient<std_srvs::Empty>("/elevation_mapping/clear_map");
+  pose_sub_ = pnh.subscribe("/robot_pose", 1, &MapCombiner::poseCallback, this);
+
+  static_map_sub_ = pnh.subscribe("/map", 1, &MapCombiner::staticMapCallback, this);
+  local_elevation_map_sub_ = pnh.subscribe("/elevation_mapping/elevation_map", 1, &MapCombiner::localElevationMapCallback, this);
 }
 
-void MapCombiner::staticMapCallback(const nav_msgs::OccupancyGridConstPtr& msg)
+void MapCombiner::staticMapCallback(const nav_msgs::OccupancyGrid& msg)
 {
-  grid_map::GridMapRosConverter::fromOccupancyGrid(*msg, "occupancy", static_map_retrieved_);
+  grid_map::GridMapRosConverter::fromOccupancyGrid(msg, "occupancy", static_map_retrieved_);
 
   static_map_fused_ = static_map_retrieved_;
 
@@ -97,6 +99,7 @@ bool MapCombiner::combineMaps()
   bool submap_create_success;
   grid_map::GridMap static_cut = this->static_map_retrieved_.getSubmap(local_position, local_length, submap_create_success);
 
+  /*
   cv::Mat static_cut_mat;
   grid_map::GridMapRosConverter::toCvImage(static_cut, "occupancy", static_cut_mat);
   //debug_img_provider_->addDebugImage(static_cut_mat);
@@ -118,7 +121,7 @@ bool MapCombiner::combineMaps()
 
   //eroded = 255 - eroded;
 
-
+  */
 
 
 
@@ -155,7 +158,7 @@ bool MapCombiner::combineMaps()
       //if (static_data(index(0), index(1)) < 0.001){
 
 
-      if ( std::abs( robot_elevation - elev_data(elev_index(0), elev_index(1)) ) > p_pos_obstacle_diff_threshold_ ){
+      if ( std::abs( robot_elevation - elev_data(elev_index(0), elev_index(1)) ) > p_obstacle_diff_threshold_ ){
         static_cut_data(index(0), index(1)) = 100.0;
       }
     }
@@ -220,17 +223,19 @@ void MapCombiner::initialPoseCallback(const geometry_msgs::PoseWithCovarianceSta
 
 void MapCombiner::dynRecParamCallback(map_combiner::MapCombinerConfig &config, uint32_t level)
 {
-  p_pos_obstacle_diff_threshold_ = config.pos_elev_diff_threshold;
-  p_neg_obstacle_diff_threshold_ = config.neg_elev_diff_threshold;
-  p_fuse_elevation_map_          = config.fuse_elevation_map;
+  p_obstacle_diff_threshold_ = config.elev_diff_threshold;
+  p_pose_height_offset_      = config.pose_height_offset;
+  p_fuse_elevation_map_      = config.fuse_elevation_map;
 
-  ROS_INFO("MapCombiner params set: pos thresh: %f neg thresh: %f", p_pos_obstacle_diff_threshold_,  p_neg_obstacle_diff_threshold_);
+  ROS_INFO("MapCombiner params set: obstacle thresh: %f height offset: %f", p_obstacle_diff_threshold_,  p_pose_height_offset_);
 }
 
 bool MapCombiner::updateInflatedLayer(grid_map::GridMap& map)
 {
   cv::Mat static_map_cv;
   grid_map::GridMapRosConverter::toCvImage(map, "occupancy", static_map_cv);
+
+  //ROS_WARN("type: %d", static_map_cv.type());
   //debug_img_provider_->addDebugImage(static_cut_mat);
 
   cv::Mat static_map_cv_gray;
@@ -263,9 +268,18 @@ bool MapCombiner::updateInflatedLayer(grid_map::GridMap& map)
 
   //cv::cvtColor(static_map_cv_eroded, static_map_cv_eroded_uc8, CV_GRAY2BGRA);
 
-  grid_map::GridMapRosConverter::addLayerFromImage(*static_map_cv_eroded.toImageMsg(), "occupancy_inflated", map);
+  ROS_DEBUG("map size: %d %d grid size: %d %d, inflated size: %d %d",
+           map.getSize()[0],
+           map.getSize()[1],
+           static_map_cv.size().width,
+           static_map_cv.size().height,
+           static_map_cv_eroded.image.size().width,
+           static_map_cv_eroded.image.size().height);
 
-  ROS_INFO("grid size: %d %d, inflated size: %d %d", static_map_cv.size().width, static_map_cv.size().height, static_map_cv_eroded.image.size().width, static_map_cv_eroded.image.size().height);
+  sensor_msgs::ImagePtr img = static_map_cv_eroded.toImageMsg();
+  grid_map::GridMapRosConverter::addLayerFromImage(*img.get(), "occupancy_inflated", map);
+
+
 
   return true;
 }
