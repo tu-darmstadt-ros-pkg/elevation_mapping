@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+
+<launch>
+    <node pkg="map_combiner" type="map_combiner_node" name="map_combiner_node" output="screen" launch-prefix="valgrind --tool=memcheck --track-origins=yes --leak-check=full --show-leak-kinds=all -v --log-file=/home/kohlbrecher/valgrind.txt" >
+    </node>
+</launch>
