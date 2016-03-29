@@ -24,6 +24,8 @@
 
 #include <cv_debug_provider/cv_debug_provider.h>
 
+#include <grid_map_core/Polygon.hpp>
+
 
 
 namespace map_combiner {
@@ -58,6 +60,11 @@ protected:
 
   bool updateInflatedLayer(grid_map::GridMap& map);
 
+  void setFootprintPoly(double footprint_x, double footprint_y);
+
+  grid_map::Polygon getTransformedPoly(const grid_map::Polygon& poly, const geometry_msgs::Pose& pose);
+  grid_map::Polygon getTransformedPoly(const grid_map::Polygon& poly, const Eigen::Affine3d& pose);
+
 
   ros::Subscriber static_map_sub_;
   ros::Subscriber local_elevation_map_sub_;
@@ -74,6 +81,8 @@ protected:
   grid_map::GridMap static_map_retrieved_;
   grid_map::GridMap static_map_fused_;
 
+  grid_map::Polygon footprint_poly_;
+
   //! Fused elevation map as grid map.
   grid_map::GridMap local_elevation_map_;
 
@@ -81,11 +90,14 @@ protected:
 
   double p_obstacle_diff_threshold_;
   double p_pose_height_offset_;
+  double p_footprint_x;
+  double p_footprint_y;
   bool p_fuse_elevation_map_;
 
   dynamic_reconfigure::Server<map_combiner::MapCombinerConfig> dyn_rec_server_;
 
   boost::shared_ptr<CvDebugProvider> debug_img_provider_;
+  ros::Publisher poly_debug_pub_;
 };
 
 } /* namespace */

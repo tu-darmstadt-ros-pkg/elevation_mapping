@@ -4,6 +4,8 @@
 
 #include <cv_image_proc/cv_image_convert.h>
 
+#include <eigen_conversions/eigen_msg.h>
+
 namespace map_combiner{
 
 MapCombiner::MapCombiner()
@@ -14,7 +16,7 @@ MapCombiner::MapCombiner()
 
   debug_img_provider_.reset(new CvDebugProvider(pnh, sensor_msgs::image_encodings::RGB8, true));
 
-
+  poly_debug_pub_ = pnh.advertise<geometry_msgs::PolygonStamped>("debug_poly", 1, false);
 
   fused_map_pub_ = pnh.advertise<grid_map_msgs::GridMap>("/fused_grid_map", 1, false);
   fused_ros_map_pub_ = pnh.advertise<nav_msgs::OccupancyGrid>("/dynamic_map", 1, true);
@@ -58,6 +60,7 @@ void MapCombiner::poseCallback(const geometry_msgs::PoseStampedConstPtr& msg)
   robot_pose_ = msg;
 }
 
+
 bool MapCombiner::combineMaps()
 {
   ros::WallTime start_time = ros::WallTime::now();
@@ -78,7 +81,7 @@ bool MapCombiner::combineMaps()
   //float robot_elevation = local_elevation_map_.atPosition("elevation", grid_map::Position(robot_pose_->pose.position.x, robot_pose_->pose.position.y));
 
   //if (std::isnan(robot_elevation)){
-  float robot_elevation = robot_pose_->pose.position.z - 0.1;
+  float robot_elevation = robot_pose_->pose.position.z + p_pose_height_offset_;
   //}
 
   const grid_map::Length& local_length = local_elevation_map_.getLength();
@@ -162,8 +165,31 @@ bool MapCombiner::combineMaps()
         static_cut_data(index(0), index(1)) = 100.0;
       }
     }
+    //Uncomment below to mark everything occupied
+    //static_cut_data(index(0), index(1)) = 100.0;
 
-    //}
+  }
+
+  grid_map::Polygon pose_footprint = this->getTransformedPoly(footprint_poly_, robot_pose_->pose);
+
+  //const std::vector<grid_map::Position>& vertices = pose_footprint.getVertices();
+
+  //for (size_t i  = 0; i < vertices.size(); ++i){
+  //  std::cout << "v: " << vertices[i].x() << " " <<  vertices[i].y() << "\n";
+  //}
+
+  if (poly_debug_pub_.getNumSubscribers() > 0){
+    geometry_msgs::PolygonStamped poly_msg;
+    grid_map::PolygonRosConverter::toMessage(pose_footprint, poly_msg);
+    poly_debug_pub_.publish(poly_msg);
+  }
+
+  for (grid_map::PolygonIterator poly_iterator(static_cut, pose_footprint); !poly_iterator.isPastEnd(); ++poly_iterator) {
+    const grid_map::Index index(*poly_iterator);
+
+    //std::cout << "idx: " << index(0) << " " << index(1) << "\n";
+
+    static_cut_data(index(0), index(1)) = 0.0;
   }
 
 
@@ -227,6 +253,8 @@ void MapCombiner::dynRecParamCallback(map_combiner::MapCombinerConfig &config, u
   p_pose_height_offset_      = config.pose_height_offset;
   p_fuse_elevation_map_      = config.fuse_elevation_map;
 
+  this->setFootprintPoly(config.footprint_x, config.footprint_y);
+
   ROS_INFO("MapCombiner params set: obstacle thresh: %f height offset: %f", p_obstacle_diff_threshold_,  p_pose_height_offset_);
 }
 
@@ -282,6 +310,39 @@ bool MapCombiner::updateInflatedLayer(grid_map::GridMap& map)
 
 
   return true;
+}
+
+void MapCombiner::setFootprintPoly(double footprint_x, double footprint_y)
+{
+  footprint_poly_.removeVertices();
+  footprint_poly_.setFrameId("base_link");
+  footprint_poly_.addVertex(grid_map::Position( footprint_x,  footprint_y));
+  footprint_poly_.addVertex(grid_map::Position(-footprint_x,  footprint_y));
+  footprint_poly_.addVertex(grid_map::Position(-footprint_x, -footprint_y));
+  footprint_poly_.addVertex(grid_map::Position( footprint_x, -footprint_y));
+}
+
+grid_map::Polygon MapCombiner::getTransformedPoly(const grid_map::Polygon& poly, const geometry_msgs::Pose& pose)
+{
+  Eigen::Affine3d transform;
+  tf::poseMsgToEigen(pose, transform);
+  return getTransformedPoly(poly, transform);
+}
+
+grid_map::Polygon MapCombiner::getTransformedPoly(const grid_map::Polygon& poly, const Eigen::Affine3d& pose)
+{
+  grid_map::Polygon out_poly;
+  out_poly.setFrameId("world");
+
+  const std::vector<grid_map::Position>& vertices = poly.getVertices();
+
+  for (size_t i  = 0; i < vertices.size(); ++i){
+    Eigen::Vector3d tmp(pose * Eigen::Vector3d(vertices[i](0), vertices[i](1), 0.0));
+    //std::cout << tmp << "\n";
+    out_poly.addVertex(grid_map::Position(tmp.x(), tmp.y()));
+  }
+
+  return out_poly;
 }
 
 }
