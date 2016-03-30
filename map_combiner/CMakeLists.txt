@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   dynamic_reconfigure
   cv_image_proc
   cv_debug_provider
+  grid_map_proc
 )
 
 generate_dynamic_reconfigure_options(cfg/MapCombiner.cfg)

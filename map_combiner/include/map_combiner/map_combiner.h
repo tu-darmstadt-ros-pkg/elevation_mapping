@@ -60,12 +60,6 @@ protected:
 
   bool updateInflatedLayer(grid_map::GridMap& map);
 
-  void setFootprintPoly(double footprint_x, double footprint_y);
-
-  grid_map::Polygon getTransformedPoly(const grid_map::Polygon& poly, const geometry_msgs::Pose& pose);
-  grid_map::Polygon getTransformedPoly(const grid_map::Polygon& poly, const Eigen::Affine3d& pose);
-
-
   ros::Subscriber static_map_sub_;
   ros::Subscriber local_elevation_map_sub_;
 

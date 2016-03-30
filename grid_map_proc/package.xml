@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
-<package format="2">
-  <name>map_combiner</name>
+<package>
+  <name>grid_map_proc</name>
   <version>0.0.0</version>
-  <description>The map_combiner package</description>
+  <description>The grid_map_proc package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->
@@ -19,7 +19,7 @@
   <!-- Url tags are optional, but mutiple are allowed, one per tag -->
   <!-- Optional attribute type can be: website, bugtracker, or repository -->
   <!-- Example: -->
-  <!-- <url type="website">http://wiki.ros.org/map_combiner</url> -->
+  <!-- <url type="website">http://wiki.ros.org/grid_map_proc</url> -->
 
 
   <!-- Author tags are optional, mutiple are allowed, one per tag -->
@@ -40,17 +40,20 @@
   <!-- Use test_depend for packages you need only for testing: -->
   <!--   <test_depend>gtest</test_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
-  <depend>cmake_modules</depend>
-  <depend>eigen_conversions</depend>
-  <depend>grid_map_core</depend>
-  <depend>grid_map_msgs</depend>
-  <depend>grid_map_ros</depend>
-  <depend>nav_msgs</depend>
-  <depend>roscpp</depend>
-  <depend>dynamic_reconfigure</depend>
-  <depend>cv_image_proc</depend>
-  <depend>cv_debug_provider</depend>
-  <depend>grid_map_proc</depend>
+  <build_depend>eigen_conversions</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>grid_map_core</build_depend>
+  <build_depend>grid_map_msgs</build_depend>
+  <build_depend>grid_map_ros</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>tf</build_depend>
+  <run_depend>eigen_conversions</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>grid_map_core</run_depend>
+  <run_depend>grid_map_msgs</run_depend>
+  <run_depend>grid_map_ros</run_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>tf</run_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

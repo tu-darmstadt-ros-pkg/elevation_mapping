@@ -6,6 +6,8 @@
 
 #include <eigen_conversions/eigen_msg.h>
 
+#include <grid_map_proc/grid_map_polygon_tools.h>
+
 namespace map_combiner{
 
 MapCombiner::MapCombiner()
@@ -170,7 +172,7 @@ bool MapCombiner::combineMaps()
 
   }
 
-  grid_map::Polygon pose_footprint = this->getTransformedPoly(footprint_poly_, robot_pose_->pose);
+  grid_map::Polygon pose_footprint = grid_map_polygon_tools::getTransformedPoly(footprint_poly_, robot_pose_->pose);
 
   //const std::vector<grid_map::Position>& vertices = pose_footprint.getVertices();
 
@@ -253,7 +255,7 @@ void MapCombiner::dynRecParamCallback(map_combiner::MapCombinerConfig &config, u
   p_pose_height_offset_      = config.pose_height_offset;
   p_fuse_elevation_map_      = config.fuse_elevation_map;
 
-  this->setFootprintPoly(config.footprint_x, config.footprint_y);
+  grid_map_polygon_tools::setFootprintPoly(config.footprint_x, config.footprint_y, this->footprint_poly_);
 
   ROS_INFO("MapCombiner params set: obstacle thresh: %f height offset: %f", p_obstacle_diff_threshold_,  p_pose_height_offset_);
 }
@@ -310,39 +312,6 @@ bool MapCombiner::updateInflatedLayer(grid_map::GridMap& map)
 
 
   return true;
-}
-
-void MapCombiner::setFootprintPoly(double footprint_x, double footprint_y)
-{
-  footprint_poly_.removeVertices();
-  footprint_poly_.setFrameId("base_link");
-  footprint_poly_.addVertex(grid_map::Position( footprint_x,  footprint_y));
-  footprint_poly_.addVertex(grid_map::Position(-footprint_x,  footprint_y));
-  footprint_poly_.addVertex(grid_map::Position(-footprint_x, -footprint_y));
-  footprint_poly_.addVertex(grid_map::Position( footprint_x, -footprint_y));
-}
-
-grid_map::Polygon MapCombiner::getTransformedPoly(const grid_map::Polygon& poly, const geometry_msgs::Pose& pose)
-{
-  Eigen::Affine3d transform;
-  tf::poseMsgToEigen(pose, transform);
-  return getTransformedPoly(poly, transform);
-}
-
-grid_map::Polygon MapCombiner::getTransformedPoly(const grid_map::Polygon& poly, const Eigen::Affine3d& pose)
-{
-  grid_map::Polygon out_poly;
-  out_poly.setFrameId("world");
-
-  const std::vector<grid_map::Position>& vertices = poly.getVertices();
-
-  for (size_t i  = 0; i < vertices.size(); ++i){
-    Eigen::Vector3d tmp(pose * Eigen::Vector3d(vertices[i](0), vertices[i](1), 0.0));
-    //std::cout << tmp << "\n";
-    out_poly.addVertex(grid_map::Position(tmp.x(), tmp.y()));
-  }
-
-  return out_poly;
 }
 
 }
