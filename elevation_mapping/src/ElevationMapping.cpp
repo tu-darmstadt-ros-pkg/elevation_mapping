@@ -235,7 +235,7 @@ void ElevationMapping::pointCloudCallback(
 
   // Update map from motion prediction.
   if (!updatePrediction(time)) {
-    ROS_ERROR("Updating process noise failed.");
+    ROS_DEBUG("Updating process noise failed.");
     resetMapUpdateTimer();
     return;
   }
@@ -330,7 +330,7 @@ bool ElevationMapping::updatePrediction(const ros::Time& time)
 
   if (time < map_.getTimeOfLastUpdate())
   {
-    ROS_ERROR("Requested update with time stamp %f, but time of last update was %f.", time.toSec(), map_.getTimeOfLastUpdate().toSec());
+    ROS_DEBUG("Requested update with time stamp %f, but time of last update was %f.", time.toSec(), map_.getTimeOfLastUpdate().toSec());
     return false;
   }
 
