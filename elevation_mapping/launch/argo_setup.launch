@@ -32,5 +32,6 @@
     </node>
     
     <node pkg="map_combiner" type="map_combiner_node" name="map_combiner_node" output="screen">
+      <param name="fuse_elevation_map" value="false"/>
     </node>
 </launch>
