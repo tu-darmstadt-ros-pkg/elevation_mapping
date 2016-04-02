@@ -118,7 +118,7 @@ bool MapCombiner::combineMaps()
   int erosion_size = 2;
   cv::Mat element = cv::getStructuringElement( erosion_type,
                                                cv::Size( 2*erosion_size + 1, 2*erosion_size+1 ),
-                                               cv::Point( erosion_size, erosion_size ) );
+                                               cv::Point( erosion_sie, erosion_size ) );
 
   cv::Mat static_cut_mat_eroded;
   cv::dilate(static_cut_mat_gray, static_cut_mat_eroded, element);
@@ -308,8 +308,6 @@ bool MapCombiner::updateInflatedLayer(grid_map::GridMap& map)
 
   sensor_msgs::ImagePtr img = static_map_cv_eroded.toImageMsg();
   grid_map::GridMapRosConverter::addLayerFromImage(*img.get(), "occupancy_inflated", map);
-
-
 
   return true;
 }
