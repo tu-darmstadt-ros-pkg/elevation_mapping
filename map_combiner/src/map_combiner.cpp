@@ -32,6 +32,8 @@ MapCombiner::MapCombiner()
 
   static_map_sub_ = pnh.subscribe("/map", 1, &MapCombiner::staticMapCallback, this);
   local_elevation_map_sub_ = pnh.subscribe("/elevation_mapping/elevation_map", 1, &MapCombiner::localElevationMapCallback, this);
+
+  worldmodel_sub_ = pnh.subscribe("/worldmodel/objects", 40, &MapCombiner::worldmodelCallback, this);
 }
 
 void MapCombiner::staticMapCallback(const nav_msgs::OccupancyGrid& msg)
@@ -55,6 +57,33 @@ void MapCombiner::localElevationMapCallback(const grid_map_msgs::GridMapConstPtr
 
     this->combineMaps();
   }
+}
+
+void MapCombiner::worldmodelCallback(const hector_worldmodel_msgs::ObjectModel& msg)
+{
+  size_t size = msg.objects.size();
+
+  for (size_t i = 0; i < size; ++i){
+    const hector_worldmodel_msgs::Object& obj = msg.objects[i];
+
+    if ((obj.info.class_id == "obstacle") || (obj.info.class_id == "heat_source")){
+
+      if (obj.state.state == hector_worldmodel_msgs::ObjectState::CONFIRMED){
+
+        grid_map::Matrix& static_map_data = static_map_fused_["occupancy"];
+
+        grid_map::Position position (obj.pose.pose.position.x, obj.pose.pose.position.y);
+
+        for (grid_map::CircleIterator circle_iterator(static_map_fused_, position, 0.4); !circle_iterator.isPastEnd(); ++circle_iterator) {
+          const grid_map::Index index(*circle_iterator);
+
+          static_map_data(index(0), index(1)) = 100.0;
+        }
+      }
+    }
+  }
+
+  this->publishFusedNavGrid();
 }
 
 void MapCombiner::poseCallback(const geometry_msgs::PoseStampedConstPtr& msg)

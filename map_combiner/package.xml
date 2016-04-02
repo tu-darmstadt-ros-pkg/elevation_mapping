@@ -51,7 +51,7 @@
   <depend>cv_image_proc</depend>
   <depend>cv_debug_provider</depend>
   <depend>grid_map_proc</depend>
-
+  <depend>hector_worldmodel_msgs</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

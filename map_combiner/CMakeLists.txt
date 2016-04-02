@@ -18,6 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
   cv_image_proc
   cv_debug_provider
   grid_map_proc
+  hector_worldmodel_msgs
 )
 
 generate_dynamic_reconfigure_options(cfg/MapCombiner.cfg)

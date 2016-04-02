@@ -21,6 +21,8 @@
 #include <ros/ros.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 
+#include <hector_worldmodel_msgs/ObjectModel.h>
+
 
 #include <cv_debug_provider/cv_debug_provider.h>
 
@@ -48,6 +50,7 @@ class MapCombiner
 protected:
   void staticMapCallback(const nav_msgs::OccupancyGrid& msg);
   void localElevationMapCallback(const grid_map_msgs::GridMapConstPtr& msg);
+  void worldmodelCallback(const hector_worldmodel_msgs::ObjectModel& msg);
 
   void poseCallback(const geometry_msgs::PoseStampedConstPtr& msg);
 
@@ -62,6 +65,7 @@ protected:
 
   ros::Subscriber static_map_sub_;
   ros::Subscriber local_elevation_map_sub_;
+  ros::Subscriber worldmodel_sub_;
 
   ros::Subscriber pose_sub_;
   ros::Subscriber initial_pose_sub_;
