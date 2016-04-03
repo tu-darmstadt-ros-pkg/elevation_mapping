@@ -63,6 +63,7 @@ void MapCombiner::worldmodelCallback(const hector_worldmodel_msgs::ObjectModel& 
 {
   size_t size = msg.objects.size();
 
+  //Add confirmed obstacles and heat sources as occupied
   for (size_t i = 0; i < size; ++i){
     const hector_worldmodel_msgs::Object& obj = msg.objects[i];
 
@@ -82,6 +83,29 @@ void MapCombiner::worldmodelCallback(const hector_worldmodel_msgs::ObjectModel& 
       }
     }
   }
+
+  //Clear footprint
+  if (robot_pose_.get()){
+
+    grid_map::Polygon pose_footprint = grid_map_polygon_tools::getTransformedPoly(footprint_poly_, robot_pose_->pose);
+
+    if (poly_debug_pub_.getNumSubscribers() > 0){
+      geometry_msgs::PolygonStamped poly_msg;
+      grid_map::PolygonRosConverter::toMessage(pose_footprint, poly_msg);
+      poly_debug_pub_.publish(poly_msg);
+    }
+
+    grid_map::Matrix& static_map_data = static_map_fused_["occupancy"];
+
+    for (grid_map::PolygonIterator poly_iterator(static_map_fused_, pose_footprint); !poly_iterator.isPastEnd(); ++poly_iterator) {
+      const grid_map::Index index(*poly_iterator);
+
+      static_map_data(index(0), index(1)) = 0.0;
+    }
+  }else{
+    ROS_WARN("Robot pose not available in worldmodel callback, not clearing footprint.");
+  }
+
 
   this->publishFusedNavGrid();
 }
