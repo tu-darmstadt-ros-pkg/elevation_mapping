@@ -34,4 +34,7 @@
     <node pkg="map_combiner" type="map_combiner_node" name="map_combiner_node" output="screen">
       <param name="fuse_elevation_map" value="false"/>
     </node>
+
+    <node pkg="navigation_collision_checker" type="path_collision_checker_node" name="path_collision_checker_node" output="screen">
+    </node>    
 </launch>
