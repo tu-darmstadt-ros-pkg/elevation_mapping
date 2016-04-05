@@ -76,9 +76,10 @@ void MapCombiner::worldmodelCallback(const hector_worldmodel_msgs::ObjectModel& 
     if (obj.info.class_id == "obstacle"){
       if (obj.state.state == hector_worldmodel_msgs::ObjectState::CONFIRMED){
         obstacle_radius = p_large_obstacle_radius_;
-      }else if (obj.state.state == hector_worldmodel_msgs::ObjectState::ACTIVE){
-        obstacle_radius = p_small_obstacle_radius_;
       }
+      //}else if (obj.state.state == hector_worldmodel_msgs::ObjectState::ACTIVE){
+      //  obstacle_radius = p_small_obstacle_radius_;
+      //}
     }else if (obj.info.class_id == "heat_source"){
       if (obj.state.state == hector_worldmodel_msgs::ObjectState::CONFIRMED){
         obstacle_radius = p_large_obstacle_radius_;
