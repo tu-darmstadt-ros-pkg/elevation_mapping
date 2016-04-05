@@ -63,6 +63,10 @@ void MapCombiner::worldmodelCallback(const hector_worldmodel_msgs::ObjectModel& 
 {
   size_t size = msg.objects.size();
 
+  // Use static map always as base as we otherwise might clear step obstacles and start
+  // planning through them
+  static_map_fused_ = static_map_retrieved_;
+
   //Add confirmed obstacles and heat sources as occupied
   for (size_t i = 0; i < size; ++i){
     const hector_worldmodel_msgs::Object& obj = msg.objects[i];
