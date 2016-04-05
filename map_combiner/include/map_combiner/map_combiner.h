@@ -90,6 +90,8 @@ protected:
   double p_pose_height_offset_;
   double p_footprint_x;
   double p_footprint_y;
+  double p_large_obstacle_radius_;
+  double p_small_obstacle_radius_;
   bool p_fuse_elevation_map_;
 
   dynamic_reconfigure::Server<map_combiner::MapCombinerConfig> dyn_rec_server_;

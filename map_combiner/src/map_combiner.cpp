@@ -67,22 +67,34 @@ void MapCombiner::worldmodelCallback(const hector_worldmodel_msgs::ObjectModel& 
   for (size_t i = 0; i < size; ++i){
     const hector_worldmodel_msgs::Object& obj = msg.objects[i];
 
-    if ((obj.info.class_id == "obstacle") || (obj.info.class_id == "heat_source")){
+    double obstacle_radius = -1.0;
 
+    if (obj.info.class_id == "obstacle"){
       if (obj.state.state == hector_worldmodel_msgs::ObjectState::CONFIRMED){
+        obstacle_radius = p_large_obstacle_radius_;
+      }else if (obj.state.state == hector_worldmodel_msgs::ObjectState::ACTIVE){
+        obstacle_radius = p_small_obstacle_radius_;
+      }
+    }else if (obj.info.class_id == "heat_source"){
+      if (obj.state.state == hector_worldmodel_msgs::ObjectState::CONFIRMED){
+        obstacle_radius = p_large_obstacle_radius_;
+      }
+    }
 
-        grid_map::Matrix& static_map_data = static_map_fused_["occupancy"];
+    if ( obstacle_radius > 0.0){
 
-        grid_map::Position position (obj.pose.pose.position.x, obj.pose.pose.position.y);
+      grid_map::Matrix& static_map_data = static_map_fused_["occupancy"];
 
-        for (grid_map::CircleIterator circle_iterator(static_map_fused_, position, 0.4); !circle_iterator.isPastEnd(); ++circle_iterator) {
-          const grid_map::Index index(*circle_iterator);
+      grid_map::Position position (obj.pose.pose.position.x, obj.pose.pose.position.y);
 
-          static_map_data(index(0), index(1)) = 100.0;
-        }
+      for (grid_map::CircleIterator circle_iterator(static_map_fused_, position, obstacle_radius); !circle_iterator.isPastEnd(); ++circle_iterator) {
+        const grid_map::Index index(*circle_iterator);
+
+        static_map_data(index(0), index(1)) = 100.0;
       }
     }
   }
+
 
   //Clear footprint
   if (robot_pose_.get()){
@@ -306,6 +318,9 @@ void MapCombiner::dynRecParamCallback(map_combiner::MapCombinerConfig &config, u
 {
   p_obstacle_diff_threshold_ = config.elev_diff_threshold;
   p_pose_height_offset_      = config.pose_height_offset;
+  p_large_obstacle_radius_   = config.large_obstacle_radius;
+  p_small_obstacle_radius_   = config.small_obstacle_radius;
+
   p_fuse_elevation_map_      = config.fuse_elevation_map;
 
   grid_map_polygon_tools::setFootprintPoly(config.footprint_x, config.footprint_y, this->footprint_poly_);
