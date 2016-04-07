@@ -507,9 +507,6 @@ void MapCombiner::segmentObstacleAt(const geometry_msgs::Pose& pose, const doubl
       obstacle_marker_text_.color = obstacle_marker_box_.color;
       obstacle_marker_text_.color.a = 0.95;
 
-
-      obstacle_marker_text_.text = "Type: Positive Obst.\nRecommendation: Find other Pathway";
-      
       if(rect.size.width < rect.size.height){
         //printf("Angle along longer side: %7.2f\n", calculatedRect.angle+180);
         Eigen::Quaterniond  quat (Eigen::AngleAxisd((rect.angle+90.0) * (M_PI/180.0) , Eigen::Vector3d::UnitZ()));
