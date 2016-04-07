@@ -377,10 +377,22 @@ void MapCombiner::segmentObstacleAt(const geometry_msgs::Pose& pose, const doubl
     return;
   }
 
+
+
   //grid_map::GridMap elevation_cut = this->static_map_retrieved_.getSubmap(pos, local_length, submap_create_success);
 
   grid_map::Matrix& elev_data   = local_elevation_map_["elevation"];
   grid_map::Matrix& static_cut_mask = static_cut["obstacle_check_mask"];
+
+  grid_map::Polygon footprint_poly = grid_map_polygon_tools::getTransformedPoly(this->footprint_poly_, this->robot_pose_->pose);
+
+  for (grid_map::PolygonIterator poly_iterator(static_cut, footprint_poly); !poly_iterator.isPastEnd(); ++poly_iterator) {
+
+    const grid_map::Index index(*poly_iterator);
+
+    static_cut_mask(index(0), index(1)) = 0.0;
+  }
+
 
   //std::vector<grid_map::Position> obstacle_points;
   std::vector<cv::Point2f> obstacle_points;
