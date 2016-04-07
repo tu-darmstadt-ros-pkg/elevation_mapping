@@ -53,10 +53,13 @@ protected:
   void worldmodelCallback(const hector_worldmodel_msgs::ObjectModel& msg);
 
   void poseCallback(const geometry_msgs::PoseStampedConstPtr& msg);
+  void collisionPoseCallback(const geometry_msgs::PoseStampedConstPtr& msg);
 
   void initialPoseCallback(const geometry_msgs::PoseWithCovarianceStamped pose);
 
   void dynRecParamCallback(map_combiner::MapCombinerConfig &config, uint32_t level);
+
+  void segmentObstacleAt(const geometry_msgs::Pose& pose, const double search_area_edge_length);
 
   void publishFusedNavGrid();
   void callElevationMapReset();
@@ -68,10 +71,18 @@ protected:
   ros::Subscriber worldmodel_sub_;
 
   ros::Subscriber pose_sub_;
+  ros::Subscriber collision_pose_sub_;
   ros::Subscriber initial_pose_sub_;
 
   ros::Publisher fused_map_pub_;
   ros::Publisher fused_ros_map_pub_;
+
+  ros::Publisher pose_percept_publisher_;
+
+  ros::Publisher obstacle_marker_pub_;
+  visualization_msgs::Marker obstacle_marker_box_;
+  visualization_msgs::Marker obstacle_marker_text_;
+
 
   ros::ServiceClient reset_elev_map_service_client_;
 
@@ -92,12 +103,15 @@ protected:
   double p_footprint_y;
   double p_large_obstacle_radius_;
   double p_small_obstacle_radius_;
+  bool p_publish_percept_;
   bool p_fuse_elevation_map_;
 
   dynamic_reconfigure::Server<map_combiner::MapCombinerConfig> dyn_rec_server_;
 
   boost::shared_ptr<CvDebugProvider> debug_img_provider_;
+  boost::shared_ptr<CvDebugProvider> flood_debug_img_provider_;
   ros::Publisher poly_debug_pub_;
+  ros::Publisher obstacle_poly_pub_;
 };
 
 } /* namespace */
