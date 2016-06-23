@@ -226,6 +226,9 @@ class ElevationMapping
 
   //! If map is fused after every change for debugging/analysis purposes.
   bool isContinouslyFusing_;
+
+  //! If building an additional global map
+  bool globalMap_;
 };
 
 } /* namespace */
