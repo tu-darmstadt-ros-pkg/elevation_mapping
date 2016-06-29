@@ -1,0 +1,8 @@
+<launch>
+
+  <node pkg="map_combiner" type="map_combiner_node" name="map_combiner_node" output="screen" respawn="true">
+    <remap from="map" to="worldmodel_main/grid_map" />
+  </node>
+
+
+</launch>
