@@ -60,7 +60,7 @@ MapCombiner::MapCombiner()
 
 void MapCombiner::staticMapCallback(const nav_msgs::OccupancyGrid& msg)
 {
-    ROS_INFO("staticMapCallback");
+//    ROS_INFO("staticMapCallback");
     grid_map::GridMapRosConverter::fromOccupancyGrid(msg, "occupancy", static_map_retrieved_);
 
     static_map_fused_ = static_map_retrieved_;
@@ -70,22 +70,23 @@ void MapCombiner::staticMapCallback(const nav_msgs::OccupancyGrid& msg)
     // Elevation map is reset as is assumed on new static map also
     // elevation data is outdated (i.e. floor change)
     this->callElevationMapReset();
-    this->publishFusedNavGrid();
+   // this->publishFusedNavGrid();
 }
 
 void MapCombiner::localElevationMapCallback(const grid_map_msgs::GridMapConstPtr& msg)
 {
-    ROS_INFO("localElevationMapCallback");
     grid_map::GridMapRosConverter::fromMessage(*msg, local_elevation_map_);
 
     if (p_fuse_elevation_map_){
         this->combineMaps();
     }
+
 }
 
 void MapCombiner::worldmodelCallback(const hector_worldmodel_msgs::ObjectModel& msg)
 {
-    ROS_INFO("worldmodelCallback");
+    /*
+   // ROS_INFO("worldmodelCallback");
     size_t size = msg.objects.size();
 
     // Use static map always as base as we otherwise might clear step obstacles and start
@@ -157,7 +158,7 @@ void MapCombiner::worldmodelCallback(const hector_worldmodel_msgs::ObjectModel& 
     }
 
 
-    this->publishFusedNavGrid();
+   this->publishFusedNavGrid();*/
 }
 
 void MapCombiner::poseCallback(const geometry_msgs::PoseStampedConstPtr& msg)
@@ -169,14 +170,14 @@ void MapCombiner::poseCallback(const geometry_msgs::PoseStampedConstPtr& msg)
 
 void MapCombiner::collisionPoseCallback(const geometry_msgs::PoseStampedConstPtr& msg)
 {
-    ROS_INFO("collisionPoseCallback");
+    //ROS_INFO("collisionPoseCallback");
     this->segmentObstacleAt(msg->pose, 0.8);
 }
 
 
 bool MapCombiner::combineMaps()
 {
-    ROS_INFO("combineMaps");
+    //ROS_INFO("combineMaps");
     ros::WallTime start_time = ros::WallTime::now();
 
     ROS_DEBUG("Combine started");
@@ -252,7 +253,11 @@ bool MapCombiner::combineMaps()
         return false;
     }
 
-
+    if(!static_cut.exists("occupancy") || !local_elevation_map_.exists("elevation") || !static_cut.exists("occupancy_inflated"))
+    {
+        ROS_WARN("no occupancy /elevation /occupancy_inflated");
+        return false;
+    }
     grid_map::Matrix& elev_data   = local_elevation_map_["elevation"];
     grid_map::Matrix& static_cut_data = static_cut["occupancy"];
     grid_map::Matrix& static_cut_inflated_data = static_cut["occupancy_inflated"];
@@ -584,7 +589,7 @@ void MapCombiner::segmentObstacleAt(const geometry_msgs::Pose& pose, const doubl
 
 void MapCombiner::publishFusedNavGrid()
 {
-    ROS_INFO("publishFusedNavGrid");
+    //ROS_INFO("publishFusedNavGrid");
 
     if(!static_map_fused_.exists("occupancy"))
     {
@@ -601,13 +606,13 @@ void MapCombiner::publishFusedNavGrid()
 
 void MapCombiner::callElevationMapReset()
 {
-    ROS_INFO("publishFusedNavGrid");
-    std_srvs::Empty srv;
+    //ROS_INFO("publishFusedNavGrid");
+    /*std_srvs::Empty srv;
     if (reset_elev_map_service_client_.call(srv)){
         ROS_INFO("Succesfully called reset elevation map service from map_combiner");
     }else{
         ROS_WARN("Failed to call reset elevation map service from map_combiner!");
-    }
+    }*/
 }
 
 void MapCombiner::initialPoseCallback(const geometry_msgs::PoseWithCovarianceStamped pose)
