@@ -460,6 +460,8 @@ bool ElevationMap::clear()
     rawMap_.resetTimestamp();
     fusedMap_.clearAll();
     fusedMap_.resetTimestamp();
+    fusedMap_global_.clearAll();
+    fusedMap_global_.resetTimestamp();
     return true;
 }
 

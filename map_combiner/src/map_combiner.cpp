@@ -284,10 +284,7 @@ bool MapCombiner::combineMaps()
 
 
             if ( std::abs( robot_elevation - elev_data(elev_index(0), elev_index(1)) ) > p_obstacle_neg_diff_threshold_ ){
-                std::cout << index(0) << "  " << index(1) << " : | | = "
-                          << std::abs( robot_elevation - elev_data(elev_index(0), elev_index(1)) ) << std::endl
-                          << "   signed = " << robot_elevation - elev_data(elev_index(0), elev_index(1)) << std::endl
-                          << "   thresh = " << p_obstacle_neg_diff_threshold_ << std::endl;
+
                 static_cut_data(index(0), index(1)) = 100.0;
             }
         }
@@ -611,6 +608,8 @@ void MapCombiner::publishFusedNavGrid()
 
 void MapCombiner::callElevationMapReset()
 {
+
+  //  ROS_INFO("callElevationMapReset");
     std_srvs::Empty srv;
     if (reset_elev_map_service_client_.call(srv)){
         ROS_INFO("Succesfully called reset elevation map service from map_combiner");
