@@ -97,7 +97,8 @@ protected:
 
   geometry_msgs::PoseStampedConstPtr robot_pose_;
 
-  double p_obstacle_diff_threshold_;
+  double p_obstacle_neg_diff_threshold_;
+  double p_obstacle_pos_diff_threshold_;
   double p_pose_height_offset_;
   double p_footprint_x;
   double p_footprint_y;
