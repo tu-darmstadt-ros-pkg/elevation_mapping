@@ -1,1 +1,2 @@
-fuse_elevation_map: False
+fuse_elevation_map: True
+base_map_topic: '/scanmatcher_map'
