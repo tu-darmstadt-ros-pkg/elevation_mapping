@@ -199,6 +199,7 @@ bool MapCombiner::combineMaps()
     //if (std::isnan(robot_elevation)){
     float robot_elevation = robot_pose_->pose.position.z + p_pose_height_offset_;
     //}
+    ROS_ERROR("elevation %f",robot_elevation);
 
     const grid_map::Length& local_length = local_elevation_map_.getLength();
     const grid_map::Position& local_position = local_elevation_map_.getPosition();
@@ -282,7 +283,7 @@ bool MapCombiner::combineMaps()
             //if (static_data(index(0), index(1)) < 0.001){
 
 
-            if ( std::abs( robot_elevation - elev_data(elev_index(0), elev_index(1)) ) > p_obstacle_diff_threshold_ ){
+            if ( std::abs( robot_elevation - elev_data(elev_index(0), elev_index(1)) ) > p_obstacle_neg_diff_threshold_ ){
                 static_cut_data(index(0), index(1)) = 100.0;
             }
         }
@@ -439,7 +440,7 @@ void MapCombiner::segmentObstacleAt(const geometry_msgs::Pose& pose, const doubl
             //if (static_data(index(0), index(1)) < 0.001){
 
 
-            if ( std::abs( robot_elevation - elev_data(elev_index(0), elev_index(1)) ) > (p_obstacle_diff_threshold_ - 0.05) ){
+            if ( std::abs( robot_elevation - elev_data(elev_index(0), elev_index(1)) ) > (p_obstacle_neg_diff_threshold_ - 0.05) ){
                 obstacle_points.push_back(cv::Point2f(position.x(), position.y()));
                 obstacle_elevations.push_back(elev_data(elev_index(0), elev_index(1)));
             }
@@ -626,7 +627,8 @@ void MapCombiner::initialPoseCallback(const geometry_msgs::PoseWithCovarianceSta
 
 void MapCombiner::dynRecParamCallback(map_combiner::MapCombinerConfig &config, uint32_t level)
 {
-    p_obstacle_diff_threshold_ = config.elev_diff_threshold;
+    p_obstacle_neg_diff_threshold_ = config.elev_diff_negative_threshold;
+    p_obstacle_pos_diff_threshold_ = config.elev_diff_positive_threshold;
     p_pose_height_offset_      = config.pose_height_offset;
     p_large_obstacle_radius_   = config.large_obstacle_radius;
     p_small_obstacle_radius_   = config.small_obstacle_radius;
