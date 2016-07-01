@@ -105,6 +105,8 @@ protected:
   double p_small_obstacle_radius_;
   bool p_publish_percept_;
   bool p_fuse_elevation_map_;
+  std::string p_elevation_map_topic;
+  std::string p_base_map_topic;
 
   dynamic_reconfigure::Server<map_combiner::MapCombinerConfig> dyn_rec_server_;
 
@@ -112,6 +114,7 @@ protected:
   boost::shared_ptr<CvDebugProvider> flood_debug_img_provider_;
   ros::Publisher poly_debug_pub_;
   ros::Publisher obstacle_poly_pub_;
+  ros::NodeHandle pnh;
 };
 
 } /* namespace */

@@ -13,11 +13,10 @@
 
 namespace map_combiner{
 
-MapCombiner::MapCombiner()
+MapCombiner::MapCombiner():
+    pnh("~")
 {
-    ros::NodeHandle pnh("~");
 
-    dyn_rec_server_.setCallback(boost::bind(&MapCombiner::dynRecParamCallback, this, _1, _2));
 
     debug_img_provider_.reset(new CvDebugProvider(pnh, sensor_msgs::image_encodings::RGB8, true));
 
@@ -45,7 +44,10 @@ MapCombiner::MapCombiner()
     static_map_sub_ = pnh.subscribe("/map", 1, &MapCombiner::staticMapCallback, this);
     local_elevation_map_sub_ = pnh.subscribe("/elevation_mapping/elevation_map", 1, &MapCombiner::localElevationMapCallback, this);
 
-    worldmodel_sub_ = pnh.subscribe("/worldmodel/objects", 40, &MapCombiner::worldmodelCallback, this);
+   // worldmodel_sub_ = pnh.subscribe("/worldmodel/objects", 40, &MapCombiner::worldmodelCallback, this);
+
+
+    dyn_rec_server_.setCallback(boost::bind(&MapCombiner::dynRecParamCallback, this, _1, _2));
 
     obstacle_marker_box_.type = visualization_msgs::Marker::CUBE;
     obstacle_marker_box_.action = visualization_msgs::Marker::ADD;
@@ -60,7 +62,6 @@ MapCombiner::MapCombiner()
 
 void MapCombiner::staticMapCallback(const nav_msgs::OccupancyGrid& msg)
 {
-//    ROS_INFO("staticMapCallback");
     grid_map::GridMapRosConverter::fromOccupancyGrid(msg, "occupancy", static_map_retrieved_);
 
     static_map_fused_ = static_map_retrieved_;
@@ -69,8 +70,12 @@ void MapCombiner::staticMapCallback(const nav_msgs::OccupancyGrid& msg)
     this->updateInflatedLayer(static_map_retrieved_);
     // Elevation map is reset as is assumed on new static map also
     // elevation data is outdated (i.e. floor change)
-    this->callElevationMapReset();
-   // this->publishFusedNavGrid();
+    //this->callElevationMapReset();
+
+    if (!p_fuse_elevation_map_)
+    {
+        this->publishFusedNavGrid();
+    }
 }
 
 void MapCombiner::localElevationMapCallback(const grid_map_msgs::GridMapConstPtr& msg)
@@ -86,7 +91,6 @@ void MapCombiner::localElevationMapCallback(const grid_map_msgs::GridMapConstPtr
 void MapCombiner::worldmodelCallback(const hector_worldmodel_msgs::ObjectModel& msg)
 {
     /*
-   // ROS_INFO("worldmodelCallback");
     size_t size = msg.objects.size();
 
     // Use static map always as base as we otherwise might clear step obstacles and start
@@ -163,21 +167,18 @@ void MapCombiner::worldmodelCallback(const hector_worldmodel_msgs::ObjectModel& 
 
 void MapCombiner::poseCallback(const geometry_msgs::PoseStampedConstPtr& msg)
 {
-    //ROS_INFO("poseCallback");
     robot_pose_ = msg;
     //this->segmentObstacleAt(grid_map::Position(msg->pose.position.x, msg->pose.position.y), 2.0);
 }
 
 void MapCombiner::collisionPoseCallback(const geometry_msgs::PoseStampedConstPtr& msg)
 {
-    //ROS_INFO("collisionPoseCallback");
     this->segmentObstacleAt(msg->pose, 0.8);
 }
 
 
 bool MapCombiner::combineMaps()
 {
-    //ROS_INFO("combineMaps");
     ros::WallTime start_time = ros::WallTime::now();
 
     ROS_DEBUG("Combine started");
@@ -589,7 +590,6 @@ void MapCombiner::segmentObstacleAt(const geometry_msgs::Pose& pose, const doubl
 
 void MapCombiner::publishFusedNavGrid()
 {
-    //ROS_INFO("publishFusedNavGrid");
 
     if(!static_map_fused_.exists("occupancy"))
     {
@@ -606,13 +606,12 @@ void MapCombiner::publishFusedNavGrid()
 
 void MapCombiner::callElevationMapReset()
 {
-    //ROS_INFO("publishFusedNavGrid");
-    /*std_srvs::Empty srv;
+    std_srvs::Empty srv;
     if (reset_elev_map_service_client_.call(srv)){
         ROS_INFO("Succesfully called reset elevation map service from map_combiner");
     }else{
         ROS_WARN("Failed to call reset elevation map service from map_combiner!");
-    }*/
+    }
 }
 
 void MapCombiner::initialPoseCallback(const geometry_msgs::PoseWithCovarianceStamped pose)
@@ -635,9 +634,16 @@ void MapCombiner::dynRecParamCallback(map_combiner::MapCombinerConfig &config, u
     p_publish_percept_         = config.publish_percept;
     p_fuse_elevation_map_      = config.fuse_elevation_map;
 
-    grid_map_polygon_tools::setFootprintPoly(config.footprint_x, config.footprint_y, this->footprint_poly_);
+    p_elevation_map_topic      = config.elevation_map_topic;
+    p_base_map_topic           = config.base_map_topic;
 
-    ROS_INFO("MapCombiner params set: obstacle thresh: %f height offset: %f", p_obstacle_diff_threshold_,  p_pose_height_offset_);
+    grid_map_polygon_tools::setFootprintPoly(config.footprint_x, config.footprint_y, this->footprint_poly_);
+    local_elevation_map_sub_ = pnh.subscribe(p_elevation_map_topic, 1, &MapCombiner::localElevationMapCallback, this);
+    static_map_sub_ = pnh.subscribe(p_base_map_topic, 1, &MapCombiner::staticMapCallback, this);
+
+
+    //ROS_INFO("MapCombiner params set: obstacle thresh: %f height offset: %f", p_obstacle_diff_threshold_,  p_pose_height_offset_);
+    ROS_INFO("MapCombiner params set: \n elevation_map_topic: %s \n base_map_topic offset: %s \n fusing elevation map: %i", p_elevation_map_topic.c_str(),  p_base_map_topic.c_str(),p_fuse_elevation_map_);
 }
 
 bool MapCombiner::updateInflatedLayer(grid_map::GridMap& map)

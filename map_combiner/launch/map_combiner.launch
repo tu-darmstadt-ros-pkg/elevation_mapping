@@ -2,8 +2,9 @@
 
 <launch>
   <node pkg="map_combiner" type="map_combiner_node" name="map_combiner_node" output="screen" respawn="true">
-    <remap from="map" to="worldmodel_main/grid_map" />
-    <remap from="/elevation_mapping/elevation_map" to="/elevation_mapping/elevation_map_global" />
+      <rosparam command="load" file="$(find map_combiner)/cfg/MapCombiner.yaml" />
+    <!--<remap from="map" to="/worldmodel_main/grid_map_low_level" />
+      <remap from="/elevation_mapping/elevation_map" to="/elevation_mapping/elevation_map_global" />-->
   </node>
 
   <!--     <node pkg="grid_map_visualization" type="grid_map_visualization" name="elevation_map_fused_visualization2" output="screen" respawn="true">
