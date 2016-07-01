@@ -199,7 +199,7 @@ bool MapCombiner::combineMaps()
     //if (std::isnan(robot_elevation)){
     float robot_elevation = robot_pose_->pose.position.z + p_pose_height_offset_;
     //}
-    ROS_ERROR("elevation %f",robot_elevation);
+    // ROS_ERROR("elevation %f",robot_elevation);
 
     const grid_map::Length& local_length = local_elevation_map_.getLength();
     const grid_map::Position& local_position = local_elevation_map_.getPosition();
@@ -284,6 +284,10 @@ bool MapCombiner::combineMaps()
 
 
             if ( std::abs( robot_elevation - elev_data(elev_index(0), elev_index(1)) ) > p_obstacle_neg_diff_threshold_ ){
+                std::cout << index(0) << "  " << index(1) << " : | | = "
+                          << std::abs( robot_elevation - elev_data(elev_index(0), elev_index(1)) ) << std::endl
+                          << "   signed = " << robot_elevation - elev_data(elev_index(0), elev_index(1)) << std::endl
+                          << "   thresh = " << p_obstacle_neg_diff_threshold_ << std::endl;
                 static_cut_data(index(0), index(1)) = 100.0;
             }
         }
