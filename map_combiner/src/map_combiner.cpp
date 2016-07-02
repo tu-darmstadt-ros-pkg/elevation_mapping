@@ -441,7 +441,7 @@ void MapCombiner::segmentObstacleAt(const geometry_msgs::Pose& pose, const doubl
             //if (static_data(index(0), index(1)) < 0.001){
 
 
-            if ( std::abs( robot_elevation - elev_data(elev_index(0), elev_index(1)) ) > (p_obstacle_neg_diff_threshold_ - 0.05) ){
+            if ( std::abs( robot_elevation - elev_data(elev_index(0), elev_index(1)) ) > (p_obstacle_neg_diff_threshold_) ){
                 obstacle_points.push_back(cv::Point2f(position.x(), position.y()));
                 obstacle_elevations.push_back(elev_data(elev_index(0), elev_index(1)));
             }
