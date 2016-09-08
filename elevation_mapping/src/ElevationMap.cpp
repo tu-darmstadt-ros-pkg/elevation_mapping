@@ -97,7 +97,6 @@ void ElevationMap::setGeometry(const Eigen::Array2d& length, const double& resol
     boost::recursive_mutex::scoped_lock scopedLockForFusedData(fusedMapMutex_);
     rawMap_.setGeometry(length, resolution, position);
     fusedMap_.setGeometry(length, resolution, position);
-    fusedMap_.setGeometry(length, resolution, position);
     fusedMap_global_.setGeometry(length, resolution, position);
     ROS_INFO_STREAM("Elevation map grid resized to " << rawMap_.getSize()(0) << " rows and "  << rawMap_.getSize()(1) << " columns.");
 }
@@ -577,7 +576,7 @@ bool ElevationMap::clean()
     boost::recursive_mutex::scoped_lock scopedLockForRawData(rawMapMutex_);
     rawMap_.get("variance") = rawMap_.get("variance").unaryExpr(VarianceClampOperator<double>(minVariance_, maxVariance_));
     rawMap_.get("horizontal_variance_x") = rawMap_.get("horizontal_variance_x").unaryExpr(VarianceClampOperator<double>(minHorizontalVariance_, maxHorizontalVariance_));
-    rawMap_.get("horizontal_variance_y") = rawMap_.get("horizontal_variance_y").unaryExpr(VarianceClampOperator<double>(minHorizontalVariance_, maxHorizontalVariance_));
+    rawMap_.get("horizontal_variance_y") = rawMap_.get("horizontal_variance_y").unaryExpr(VarianceClampOperator<double>(minHorizontalVariance_, maxHorizontalVariance_)); 
     return true;
 }
 
@@ -586,12 +585,15 @@ void ElevationMap::resetFusedData()
     boost::recursive_mutex::scoped_lock scopedLockForFusedData(fusedMapMutex_);
     fusedMap_.clearAll();
     fusedMap_.resetTimestamp();
+    fusedMap_global_.clearAll();
+    fusedMap_global_.resetTimestamp();
 }
 
 void ElevationMap::setFrameId(const std::string& frameId)
 {
     rawMap_.setFrameId(frameId);
     fusedMap_.setFrameId(frameId);
+    fusedMap_global_.setFrameId(frameId);
 }
 
 const std::string& ElevationMap::getFrameId()
