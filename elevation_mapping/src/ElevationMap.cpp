@@ -585,8 +585,6 @@ void ElevationMap::resetFusedData()
     boost::recursive_mutex::scoped_lock scopedLockForFusedData(fusedMapMutex_);
     fusedMap_.clearAll();
     fusedMap_.resetTimestamp();
-    fusedMap_global_.clearAll();
-    fusedMap_global_.resetTimestamp();
 }
 
 void ElevationMap::setFrameId(const std::string& frameId)
