@@ -109,12 +109,42 @@ bool ElevationMap::add(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, 
         return false;
     }
 
+    //compute aabb
+    pcl::PointXYZRGB min = pointCloud->points[0];
+    pcl::PointXYZRGB max = pointCloud->points[0];
+    for (unsigned int i = 0; i < pointCloud->size(); ++i) {
+        auto& point = pointCloud->points[i];
+        if(point.x<min.x) min.x=point.x;
+        if(point.y<min.y) min.y=point.y;
+        if(point.x>max.x) max.x=point.x;
+        if(point.y>max.y) max.y=point.y;
+    }
+
+    grid_map::GridMap temp_map;
+    grid_map::Length temp_length;
+    temp_length(0) = (max.x-min.x)+2.0*resolution_;
+    temp_length(1) = (max.y-min.y)+2.0*resolution_;
+    grid_map::Position temp_position;
+    temp_position.x() = (min.x+max.x)/2.0;
+    temp_position.y() = (min.y+max.y)/2.0;
+    temp_map.setGeometry(temp_length, resolution_, temp_position);
+    //temp_map.
+    //temp_map.addDataFrom(rawMap_,true,true,true);
+    //rawMap_ = temp_map;
+    //ROS_INFO("min %f %f max %f %f",min.x, min.y, max.x, max.y);
+    //ROS_INFO("temp_map before %f %f %f %f",temp_map.getPosition().x(),temp_map.getPosition().y(),temp_map.getLength()(0),temp_map.getLength()(1));
+    //ROS_INFO("rawMap_ before %f %f %f %f",rawMap_.getPosition().x(),rawMap_.getPosition().y(),rawMap_.getLength()(0),rawMap_.getLength()(1));
+    rawMap_.addDataFrom(temp_map,true, false, true);
+    //ROS_INFO("rawMap_ after %f %f %f %f",rawMap_.getPosition().x(),rawMap_.getPosition().y(),rawMap_.getLength()(0),rawMap_.getLength()(1));
+    //temp_map.clearAll();
+    //ROS_INFO("temp_map before %f %f %f %f",temp_map.getPosition().x(),temp_map.getPosition().y(),temp_map.getLength()(0),temp_map.getLength()(1));
+
     for (unsigned int i = 0; i < pointCloud->size(); ++i) {
         auto& point = pointCloud->points[i];
 
         Index index;
         Position position(point.x, point.y);
-        if (!rawMap_.getIndex(position, index)) continue; // Skip this point if it does not lie within the elevation map.
+        if (!rawMap_.getIndex(position, index)) { continue;} // Skip this point if it does not lie within the elevation map.
 
         auto& elevation = rawMap_.at("elevation", index);
         auto& variance = rawMap_.at("variance", index);
@@ -238,16 +268,34 @@ bool ElevationMap::fuse(const Eigen::Array2i& topLeftIndex, const Eigen::Array2i
     // Copy raw elevation map data for safe multi-threading.
     boost::recursive_mutex::scoped_lock scopedLockForRawData(rawMapMutex_);
     auto rawMapCopy = rawMap_;
+    auto fusedMapCopy = fusedMap_;
     scopedLockForRawData.unlock();
 
     // Check if there is the need to reset out-dated data.
     if (fusedMap_.getTimestamp() != rawMapCopy.getTimestamp()) resetFusedData();
 
     // Align fused map with raw map.
-    if (rawMapCopy.getPosition() != fusedMap_.getPosition()) fusedMap_.move(rawMapCopy.getPosition());
+    //if (rawMapCopy.getPosition() != fusedMap_.getPosition()) fusedMap_.move(rawMapCopy.getPosition());
+    grid_map::GridMap size_template = rawMap_;
+    //ROS_INFO("rawMapCopy before %f %f %f %f",rawMapCopy.getPosition().x(),rawMapCopy.getPosition().y(),rawMapCopy.getLength()(0),rawMapCopy.getLength()(1));
+    //ROS_INFO("fusedMapCopy before %f %f %f %f",fusedMapCopy.getPosition().x(),fusedMapCopy.getPosition().y(),fusedMapCopy.getLength()(0),fusedMapCopy.getLength()(1));
+    //rawMapCopy.extendToInclude(fusedMap_);
+    //fusedMapCopy.extendToInclude(rawMap_);
+    size_template.extendToInclude(fusedMap_);
+    //size_template.extendToInclude(rawMap_);
+    rawMapCopy.clearAll();
+    fusedMapCopy.clearAll();
+    rawMapCopy.setGeometry(size_template.getLength(), resolution_, size_template.getPosition());
+    fusedMapCopy.setGeometry(size_template.getLength(), resolution_, size_template.getPosition());
+    rawMapCopy.addDataFrom(rawMap_,true, false, true);
+    fusedMapCopy.addDataFrom(fusedMap_,true, false, true);
+    fusedMap_ = fusedMapCopy;
+    //ROS_INFO("rawMapCopy after %f %f %f %f",rawMapCopy.getPosition().x(),rawMapCopy.getPosition().y(),rawMapCopy.getLength()(0),rawMapCopy.getLength()(1));
+    //ROS_INFO("fusedMapCopy after %f %f %f %f",fusedMapCopy.getPosition().x(),fusedMapCopy.getPosition().y(),fusedMapCopy.getLength()(0),fusedMapCopy.getLength()(1));
 
     // For each cell in requested area.
     for (SubmapIterator areaIterator(rawMapCopy, topLeftIndex, size); !areaIterator.isPastEnd(); ++areaIterator) {
+    //for (GridMapIterator areaIterator(rawMapCopy); !areaIterator.isPastEnd(); ++areaIterator) {
         if (timer.isTiming()) timer.stop();
         timer.start();
 
@@ -470,6 +518,7 @@ void ElevationMap::move(const Eigen::Vector2d& position)
     boost::recursive_mutex::scoped_lock scopedLockForRawData(rawMapMutex_);
     std::vector<BufferRegion> newRegions;
 
+
     if (rawMap_.move(position, newRegions))
     {ROS_DEBUG("Elevation map has been moved to position (%f, %f).", rawMap_.getPosition().x(), rawMap_.getPosition().y());
 
@@ -478,6 +527,8 @@ void ElevationMap::move(const Eigen::Vector2d& position)
             rawMap_.addDataFrom(underlyingMap_, false, false, true);
         }
     }
+
+
 }
 
 bool ElevationMap::publishRawElevationMap()

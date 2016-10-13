@@ -232,8 +232,10 @@ void ElevationMapping::pointCloudCallback(
 
     ROS_DEBUG("ElevationMap received a point cloud (%i points) for elevation mapping.", static_cast<int>(pointCloud->size()));
 
+
     // Update map location.
-    updateMapLocation();
+    //updateMapLocation();
+    //Instead of updating the Map Location we update the map bounds
 
     // Update map from motion prediction.
     if (!updatePrediction(time)) {
