@@ -1,5 +1,5 @@
-length_in_x: 6.0
-length_in_y: 6.0
+length_in_x: 1.0
+length_in_y: 1.0
 position_x: 0.0
 position_y: 0.0
 resolution: 0.05
@@ -9,4 +9,4 @@ mahalanobis_distance_threshold: 2.5
 multi_height_noise: 0.02
 surface_normal_estimation_radius: 0.24
 surface_normal_positive_axis: z
-global_map: true
+global_map: false

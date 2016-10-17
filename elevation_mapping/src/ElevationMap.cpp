@@ -128,16 +128,8 @@ bool ElevationMap::add(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, 
     temp_position.x() = (min.x+max.x)/2.0;
     temp_position.y() = (min.y+max.y)/2.0;
     temp_map.setGeometry(temp_length, resolution_, temp_position);
-    //temp_map.
-    //temp_map.addDataFrom(rawMap_,true,true,true);
-    //rawMap_ = temp_map;
-    //ROS_INFO("min %f %f max %f %f",min.x, min.y, max.x, max.y);
-    //ROS_INFO("temp_map before %f %f %f %f",temp_map.getPosition().x(),temp_map.getPosition().y(),temp_map.getLength()(0),temp_map.getLength()(1));
-    //ROS_INFO("rawMap_ before %f %f %f %f",rawMap_.getPosition().x(),rawMap_.getPosition().y(),rawMap_.getLength()(0),rawMap_.getLength()(1));
+
     rawMap_.addDataFrom(temp_map,true, false, true);
-    //ROS_INFO("rawMap_ after %f %f %f %f",rawMap_.getPosition().x(),rawMap_.getPosition().y(),rawMap_.getLength()(0),rawMap_.getLength()(1));
-    //temp_map.clearAll();
-    //ROS_INFO("temp_map before %f %f %f %f",temp_map.getPosition().x(),temp_map.getPosition().y(),temp_map.getLength()(0),temp_map.getLength()(1));
 
     for (unsigned int i = 0; i < pointCloud->size(); ++i) {
         auto& point = pointCloud->points[i];
@@ -290,17 +282,15 @@ bool ElevationMap::fuse(const Eigen::Array2i& topLeftIndex, const Eigen::Array2i
     rawMapCopy.addDataFrom(rawMap_,true, false, true);
     fusedMapCopy.addDataFrom(fusedMap_,true, false, true);
     fusedMap_ = fusedMapCopy;
-    //ROS_INFO("rawMapCopy after %f %f %f %f",rawMapCopy.getPosition().x(),rawMapCopy.getPosition().y(),rawMapCopy.getLength()(0),rawMapCopy.getLength()(1));
-    //ROS_INFO("fusedMapCopy after %f %f %f %f",fusedMapCopy.getPosition().x(),fusedMapCopy.getPosition().y(),fusedMapCopy.getLength()(0),fusedMapCopy.getLength()(1));
+    rawMapCopy = rawMap_;
 
-    // For each cell in requested area.
-    for (SubmapIterator areaIterator(rawMapCopy, topLeftIndex, size); !areaIterator.isPastEnd(); ++areaIterator) {
-    //for (GridMapIterator areaIterator(rawMapCopy); !areaIterator.isPastEnd(); ++areaIterator) {
+    //for (SubmapIterator areaIterator(rawMapCopy, topLeftIndex, size); !areaIterator.isPastEnd(); ++areaIterator) {
+    for (GridMapIterator areaIterator(rawMapCopy); !areaIterator.isPastEnd(); ++areaIterator) {
         if (timer.isTiming()) timer.stop();
         timer.start();
 
         // Check if fusion for this cell has already been done earlier.
-        if (fusedMap_.isValid(*areaIterator)) continue;
+        if (fusedMap_.isValid(*areaIterator)) { ROS_INFO("TODO CHECK"); continue;}
 
         if (!rawMapCopy.isValid(*areaIterator)) {
             // This is an empty cell (hole in the map).
@@ -336,6 +326,8 @@ bool ElevationMap::fuse(const Eigen::Array2i& topLeftIndex, const Eigen::Array2i
         // For each cell in submap.
         size_t i = 0;
         for (SubmapIterator submapIterator(rawMapCopy, submapTopLeftIndex, submapBufferSize); !submapIterator.isPastEnd(); ++submapIterator) {
+
+            //std::cout<<"submapBufferSize  size "<<submapBufferSize<<std::endl;
             if (!rawMapCopy.isValid(*submapIterator)) {
                 // Empty cell in submap (cannot be center cell because we checked above).
                 continue;
