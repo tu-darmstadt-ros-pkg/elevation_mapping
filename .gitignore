@@ -25,5 +25,5 @@
 .project
 .settings
 
-# QtCreator
-*.user
+# Sublime
+*.sublime*

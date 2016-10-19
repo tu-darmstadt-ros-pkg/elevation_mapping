@@ -3,7 +3,7 @@
 <launch>
     <node pkg="elevation_mapping" type="elevation_mapping" name="elevation_mapping" output="screen" respawn="true">
     	 <rosparam command="load" file="$(find elevation_mapping)/config/robots/argos_robot.yaml" />
-    	 <rosparam command="load" file="$(find elevation_mapping)/config/elevation_maps/long_range.yaml" />
+    	 <rosparam command="load" file="$(find elevation_mapping)/config/elevation_maps/long_range_global.yaml" />
     	 <rosparam command="load" file="$(find elevation_mapping)/config/sensor_processors/hokuyo_utm-30lx.yaml" />
     </node>
     
@@ -28,7 +28,7 @@
     <!--Fused map visualization-->
     <node pkg="grid_map_visualization" type="grid_map_visualization" name="elevation_map_fused_visualization" output="screen" respawn="true">
       <param name="grid_map_topic" value="/elevation_mapping/elevation_map" />
-      <rosparam command="load" file="$(find elevation_mapping)/config/visualization/fused.yaml" />
+      <rosparam command="load" file="$(find elevation_mapping)/config/visualization/fused_global.yaml" />
     </node>
     
     <node pkg="map_combiner" type="map_combiner_node" name="map_combiner_node" output="screen" respawn="true">

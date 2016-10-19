@@ -8,6 +8,8 @@
 
 #include <grid_map_proc/grid_map_polygon_tools.h>
 
+#include <grid_map_cv/grid_map_cv.hpp>
+
 #include <visualization_msgs/MarkerArray.h>
 #include <hector_worldmodel_msgs/PosePercept.h>
 
@@ -345,16 +347,19 @@ void MapCombiner::segmentObstacleAt(const geometry_msgs::Pose& pose, const doubl
     return;
   }
 
-  cv::Mat static_map_cv;
-  grid_map::GridMapRosConverter::toCvImage(static_cut, "occupancy_inflated", static_map_cv);
+  cv::Mat static_map_cv_gray;
+  //grid_map::GridMapCvConverter::toImage<unsigned char, 1>(static_cut, "occupancy_inflated", static_map_cv);
+  //(mapIn, "layer", CV_8UC4, minValue, maxValue, image);
+  grid_map::GridMapCvConverter::toImage<unsigned char, 1>(static_cut, "occupancy_inflated",CV_8UC1, 0.0, 1.0, static_map_cv_gray);
+
 
   //ROS_WARN("type: %d", static_map_cv.type());
   //debug_img_provider_->addDebugImage(static_cut_mat);
 
-  cv::Mat static_map_cv_gray;
-  cv::cvtColor(static_map_cv, static_map_cv_gray, CV_BGRA2GRAY);
+  //cv::Mat static_map_cv_gray;
+  //cv::cvtColor(static_map_cv, static_map_cv_gray, CV_BGRA2GRAY);
 
-  flood_debug_img_provider_->addDebugImage(static_map_cv);
+  flood_debug_img_provider_->addDebugImage(static_map_cv_gray);
 
   cv::Point2d seed(static_map_cv_gray.size().width/2, static_map_cv_gray.size().height/2);
 
@@ -612,14 +617,15 @@ void MapCombiner::dynRecParamCallback(map_combiner::MapCombinerConfig &config, u
 
 bool MapCombiner::updateInflatedLayer(grid_map::GridMap& map)
 {
-  cv::Mat static_map_cv;
-  grid_map::GridMapRosConverter::toCvImage(map, "occupancy", static_map_cv);
+  cv::Mat static_map_cv_gray;
+  //grid_map::GridMapRosConverter::toCvImage(map, "occupancy", static_map_cv);
+  grid_map::GridMapCvConverter::toImage<unsigned char, 1>(map, "occupancy", CV_8UC1, 0.0, 1.0, static_map_cv_gray);
 
   //ROS_WARN("type: %d", static_map_cv.type());
   //debug_img_provider_->addDebugImage(static_cut_mat);
 
-  cv::Mat static_map_cv_gray;
-  cv::cvtColor(static_map_cv, static_map_cv_gray, CV_BGRA2GRAY);
+  //cv::Mat static_map_cv_gray;
+  //cv::cvtColor(static_map_cv, static_map_cv_gray, CV_BGRA2GRAY);
 
   int erosion_type = cv::MORPH_ELLIPSE;
   int erosion_size = 2;
@@ -651,8 +657,8 @@ bool MapCombiner::updateInflatedLayer(grid_map::GridMap& map)
   ROS_DEBUG("map size: %d %d grid size: %d %d, inflated size: %d %d",
            map.getSize()[0],
            map.getSize()[1],
-           static_map_cv.size().width,
-           static_map_cv.size().height,
+           static_map_cv_gray.size().width,
+           static_map_cv_gray.size().height,
            static_map_cv_eroded.image.size().width,
            static_map_cv_eroded.image.size().height);
 
