@@ -369,7 +369,7 @@ bool ElevationMap::fuse(const grid_map::Index& topLeftIndex, const grid_map::Ind
   fusedMap_.setTimestamp(rawMapCopy.getTimestamp());
 
   ros::WallDuration duration(ros::WallTime::now() - time);
-  ROS_INFO("Elevation map has been fused in %f s.", duration.toSec());
+  ROS_DEBUG("Elevation map has been fused in %f s.", duration.toSec());
 
   if (computeSurfaceNormals) return ElevationMap::computeSurfaceNormals(topLeftIndex, size);
   return true;
