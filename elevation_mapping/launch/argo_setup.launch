@@ -19,7 +19,7 @@
     <node pkg="vigir_laserscan_to_pointcloud" type="laserscan_to_pointcloud_node" name="front_repub" respawn="true" output="screen">
       <param name="min_range" value="0" />
       <param name="use_high_fidelity_projection" value="true" />
-      <param name="target_frame" value="base_link" />
+      <param name="target_frame" value="spin_lidar_lidar_mount_link_fixed" />
       <remap from="scan" to="/move_group/scan_self_filtered" />
       <remap from="scan_cloud" to="/move_group_scan_cloud" />
       <rosparam command="load" file="$(find vigir_laserscan_to_pointcloud)/config/argo_scan_filter.yaml" />
