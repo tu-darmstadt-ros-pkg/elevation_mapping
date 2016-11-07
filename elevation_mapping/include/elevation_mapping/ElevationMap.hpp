@@ -121,12 +121,6 @@ class ElevationMap
   bool publishFusedElevationMap();
 
   /*!
-   * Publishes the global fused elevation map.
-   * @return true if successful.
-   */
-  bool publishGlobalFusedElevationMap();
-
-  /*!
    * Gets a reference to the raw grid map.
    * @return the raw grid map.
    */
@@ -227,8 +221,6 @@ class ElevationMap
    */
   bool fuse(const Eigen::Array2i& topLeftIndex, const Eigen::Array2i& size, const bool computeSurfaceNormals);
 
-
-  bool fuseGlobal();
   /*!
    * Computes the surface normals of the fused elevation map for a region of the map.
    * @param topLeftIndex the top left index of the region.
@@ -266,7 +258,6 @@ class ElevationMap
 
   //! Fused elevation map as grid map.
   grid_map::GridMap fusedMap_;
-  grid_map::GridMap fusedMap_global_;
 
   //! Underlying map, used for ground truth maps, multi-robot mapping etc.
   grid_map::GridMap underlyingMap_;
@@ -280,7 +271,6 @@ class ElevationMap
   //! ROS publishers.
   ros::Publisher elevationMapRawPublisher_;
   ros::Publisher elevationMapFusedPublisher_;
-  ros::Publisher elevationMapFusedGlobalPublisher_;
 
   //! Mutex lock for fused map.
   boost::recursive_mutex fusedMapMutex_;

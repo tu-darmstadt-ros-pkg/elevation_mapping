@@ -278,12 +278,6 @@ void ElevationMapping::pointCloudCallback(
     if (isContinouslyFusing_ && map_.hasFusedMapSubscribers()) {
         map_.fuseAll(true);
         map_.publishFusedElevationMap();
-        if(globalMap_)
-        {
-            map_.fuseGlobal();
-            map_.publishGlobalFusedElevationMap();
-        }
-
     }
 
     resetMapUpdateTimer();
@@ -310,11 +304,6 @@ void ElevationMapping::mapUpdateTimerCallback(const ros::TimerEvent&)
     if (isContinouslyFusing_ && map_.hasFusedMapSubscribers()) {
         map_.fuseAll(true);
         map_.publishFusedElevationMap();
-        if(globalMap_)
-        {
-            map_.fuseGlobal();
-            map_.publishGlobalFusedElevationMap();
-        }
     }
 
     resetMapUpdateTimer();
@@ -327,11 +316,6 @@ void ElevationMapping::publishFusedMapCallback(const ros::TimerEvent&)
     boost::recursive_mutex::scoped_lock scopedLock(map_.getFusedDataMutex());
     map_.fuseAll(false);
     map_.publishFusedElevationMap();
-    if(globalMap_)
-    {
-        map_.fuseGlobal();
-        map_.publishGlobalFusedElevationMap();
-    }
 }
 
 bool ElevationMapping::fuseEntireMap(std_srvs::Empty::Request&, std_srvs::Empty::Response&)
@@ -339,11 +323,6 @@ bool ElevationMapping::fuseEntireMap(std_srvs::Empty::Request&, std_srvs::Empty:
     boost::recursive_mutex::scoped_lock scopedLock(map_.getFusedDataMutex());
     map_.fuseAll(true);
     map_.publishFusedElevationMap();
-    if(globalMap_)
-    {
-        map_.fuseGlobal();
-        map_.publishGlobalFusedElevationMap();
-    }
     return true;
 }
 

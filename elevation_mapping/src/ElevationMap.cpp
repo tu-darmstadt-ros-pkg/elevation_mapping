@@ -35,18 +35,15 @@ ElevationMap::ElevationMap(ros::NodeHandle nodeHandle)
     : nodeHandle_(nodeHandle),
       rawMap_({"elevation", "variance", "horizontal_variance_x", "horizontal_variance_y", "color"}),
       fusedMap_({"elevation", "variance", "color", "surface_normal_x", "surface_normal_y", "surface_normal_z"}),
-      fusedMap_global_({"elevation", "variance", "color", "surface_normal_x", "surface_normal_y", "surface_normal_z"}),
       hasUnderlyingMap_(false)
 {
     readParameters();
     rawMap_.setBasicLayers({"elevation", "variance"});
     fusedMap_.setBasicLayers({"elevation", "variance"});
-    fusedMap_global_.setBasicLayers({"elevation", "variance"});
     clear();
 
     elevationMapRawPublisher_ = nodeHandle_.advertise<grid_map_msgs::GridMap>("elevation_map_raw", 1);
     elevationMapFusedPublisher_ = nodeHandle_.advertise<grid_map_msgs::GridMap>("elevation_map", 1);
-    elevationMapFusedGlobalPublisher_ = nodeHandle_.advertise<grid_map_msgs::GridMap>("elevation_map_global", 1);
     if (!underlyingMapTopic_.empty()) underlyingMapSubscriber_ =
             nodeHandle_.subscribe(underlyingMapTopic_, 1, &ElevationMap::underlyingMapCallback, this);
 }
@@ -97,7 +94,6 @@ void ElevationMap::setGeometry(const Eigen::Array2d& length, const double& resol
     boost::recursive_mutex::scoped_lock scopedLockForFusedData(fusedMapMutex_);
     rawMap_.setGeometry(length, resolution, position);
     fusedMap_.setGeometry(length, resolution, position);
-    fusedMap_global_.setGeometry(length, resolution, position);
     ROS_INFO_STREAM("Elevation map grid resized to " << rawMap_.getSize()(0) << " rows and "  << rawMap_.getSize()(1) << " columns.");
 }
 
@@ -216,10 +212,6 @@ bool ElevationMap::fuseAll(const bool computeSurfaceNormals)
     return res;
 }
 
-bool ElevationMap::fuseGlobal()
-{
-    return fusedMap_global_.addDataFrom(fusedMap_,true,true,true);
-}
 
 bool ElevationMap::fuseArea(const Eigen::Vector2d& position, const Eigen::Array2d& length, const bool computeSurfaceNormals)
 {
@@ -499,8 +491,6 @@ bool ElevationMap::clear()
     rawMap_.resetTimestamp();
     fusedMap_.clearAll();
     fusedMap_.resetTimestamp();
-    fusedMap_global_.clearAll();
-    fusedMap_global_.resetTimestamp();
     return true;
 }
 
@@ -551,22 +541,6 @@ bool ElevationMap::publishFusedElevationMap()
     GridMapRosConverter::toMessage(fusedMapCopy, message);
     elevationMapFusedPublisher_.publish(message);
     ROS_DEBUG("Elevation map (fused) has been published.");
-    return true;
-}
-
-bool ElevationMap::publishGlobalFusedElevationMap()
-{
-    if (!hasFusedMapSubscribers()) return false;
-    boost::recursive_mutex::scoped_lock scopedLock(fusedMapMutex_);
-    //fusedMap_global_.addDataFrom(fusedMap_,true,true,true);
-    GridMap fusedMapCopy = fusedMap_global_;
-    scopedLock.unlock();
-    fusedMapCopy.add("standard_deviation", fusedMapCopy.get("variance").array().sqrt().matrix());
-    fusedMapCopy.add("two_sigma_bound", fusedMapCopy.get("elevation") + 2.0 * fusedMapCopy.get("variance").array().sqrt().matrix());
-    grid_map_msgs::GridMap message;
-    GridMapRosConverter::toMessage(fusedMapCopy, message);
-    elevationMapFusedGlobalPublisher_.publish(message);
-    ROS_DEBUG("Elevation map (fused, global) has been published.");
     return true;
 }
 
@@ -634,7 +608,6 @@ void ElevationMap::setFrameId(const std::string& frameId)
 {
     rawMap_.setFrameId(frameId);
     fusedMap_.setFrameId(frameId);
-    fusedMap_global_.setFrameId(frameId);
 }
 
 const std::string& ElevationMap::getFrameId()
@@ -650,7 +623,7 @@ bool ElevationMap::hasRawMapSubscribers() const
 
 bool ElevationMap::hasFusedMapSubscribers() const
 {
-    if (elevationMapFusedPublisher_.getNumSubscribers() + elevationMapFusedGlobalPublisher_.getNumSubscribers()< 1) return false;
+    if (elevationMapFusedPublisher_.getNumSubscribers() < 1) return false;
     return true;
 }
 
