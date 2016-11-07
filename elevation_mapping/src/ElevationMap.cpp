@@ -139,7 +139,7 @@ bool ElevationMap::add(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, 
         auto& horizontalVarianceX = rawMap_.at("horizontal_variance_x", index);
         auto& horizontalVarianceY = rawMap_.at("horizontal_variance_y", index);
         auto& color = rawMap_.at("color", index);
-        const float& pointVariance = pointCloudVariances(i);
+        float pointVariance = pointCloudVariances(i);
 
         if (!rawMap_.isValid(index))
         {
@@ -156,6 +156,21 @@ bool ElevationMap::add(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, 
 
         if (mahalanobisDistance < mahalanobisDistanceThreshold_)
         {
+            float diff = point.z - elevation;
+            float sigma_penalty = 1.0f + 5.f*(abs(diff)/0.01)*exp(-pow(abs(diff),2)/0.02); //1+x/sig*e^(-x^2/(2*sig))
+            //ROS_INFO("sigma_penalty = %f",sigma_penalty);
+
+            if(diff > 0)
+            {
+                variance *= sigma_penalty;
+            }
+            else
+            {
+                pointVariance *= sigma_penalty;
+
+            }
+
+
             // Fuse measurement with elevation map data.
             elevation = (variance * point.z + pointVariance * elevation) / (variance + pointVariance);
             variance =  (pointVariance * variance) / (pointVariance + variance);
