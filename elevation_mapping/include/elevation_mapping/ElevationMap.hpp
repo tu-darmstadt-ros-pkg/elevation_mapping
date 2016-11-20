@@ -84,7 +84,7 @@ class ElevationMap
    * @param computeSurfaceNormals if the surface normals should be computed after the fusion step.
    * @return true if successful.
    */
-  bool fuseAll(const bool computeSurfaceNormals);
+  //bool fuseAll(const bool computeSurfaceNormals);
 
   /*!
    * Fuses the elevation map for a certain rectangular area.
@@ -93,7 +93,7 @@ class ElevationMap
    * @param computeSurfaceNormals if the surface normals should be computed after the fusion step.
    * @return true if successful.
    */
-  bool fuseArea(const Eigen::Vector2d& position, const Eigen::Array2d& length, const bool computeSurfaceNormals);
+  //bool fuseArea(const Eigen::Vector2d& position, const Eigen::Array2d& length, const bool computeSurfaceNormals);
 
   /*!
    * Clears all data of the elevation map (data and time).
@@ -118,7 +118,7 @@ class ElevationMap
    * map, does not trigger the fusion process.
    * @return true if successful.
    */
-  bool publishFusedElevationMap();
+  //bool publishFusedElevationMap();
 
   /*!
    * Gets a reference to the raw grid map.
@@ -130,7 +130,7 @@ class ElevationMap
    * Gets a reference to the fused grid map.
    * @return the fused grid map.
    */
-  grid_map::GridMap& getFusedGridMap();
+  //grid_map::GridMap& getFusedGridMap();
 
   /*!
    * Gets the time of last map update.
@@ -142,7 +142,7 @@ class ElevationMap
    * Gets the time of last map fusion.
    * @return time of the last map fusion.
    */
-  ros::Time getTimeOfLastFusion();
+  //ros::Time getTimeOfLastFusion();
 
   /*!
    * Get the pose of the elevation map frame w.r.t. the inertial parent frame of the robot (e.g. world, map etc.).
@@ -163,7 +163,7 @@ class ElevationMap
    * Gets the fused data mutex.
    * @return reference to the fused data mutex.
    */
-  boost::recursive_mutex& getFusedDataMutex();
+  //boost::recursive_mutex& getFusedDataMutex();
 
   /*!
    * Gets the raw data mutex.
@@ -193,7 +193,7 @@ class ElevationMap
    * If the fused elevation map has subscribers.
    * @return true if number of subscribers bigger then 0.
    */
-  bool hasFusedMapSubscribers() const;
+  //bool hasFusedMapSubscribers() const;
 
   /*!
    * Callback method for the updates of the underlying map.
@@ -219,7 +219,7 @@ class ElevationMap
    * @param computeSurfaceNormals if the surface normals should be computed after the fusion step.
    * @return true if successful.
    */
-  bool fuse(const Eigen::Array2i& topLeftIndex, const Eigen::Array2i& size, const bool computeSurfaceNormals);
+  //bool fuse(const Eigen::Array2i& topLeftIndex, const Eigen::Array2i& size, const bool computeSurfaceNormals);
 
   /*!
    * Computes the surface normals of the fused elevation map for a region of the map.
@@ -256,9 +256,6 @@ class ElevationMap
   //! Raw elevation map as grid map.
   grid_map::GridMap rawMap_;
 
-  //! Fused elevation map as grid map.
-  grid_map::GridMap fusedMap_;
-
   //! Underlying map, used for ground truth maps, multi-robot mapping etc.
   grid_map::GridMap underlyingMap_;
 
@@ -270,7 +267,6 @@ class ElevationMap
 
   //! ROS publishers.
   ros::Publisher elevationMapRawPublisher_;
-  ros::Publisher elevationMapFusedPublisher_;
 
   //! Mutex lock for fused map.
   boost::recursive_mutex fusedMapMutex_;

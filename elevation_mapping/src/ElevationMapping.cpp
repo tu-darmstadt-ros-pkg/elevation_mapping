@@ -275,10 +275,10 @@ void ElevationMapping::pointCloudCallback(
 
     // Publish elevation map.
     map_.publishRawElevationMap();
-    if (isContinouslyFusing_ && map_.hasFusedMapSubscribers()) {
+    /*if (isContinouslyFusing_ && map_.hasFusedMapSubscribers()) {
         map_.fuseAll(true);
         map_.publishFusedElevationMap();
-    }
+    }*/
 
     resetMapUpdateTimer();
 }
@@ -301,28 +301,28 @@ void ElevationMapping::mapUpdateTimerCallback(const ros::TimerEvent&)
 
     // Publish elevation map.
     map_.publishRawElevationMap();
-    if (isContinouslyFusing_ && map_.hasFusedMapSubscribers()) {
+    /*if (isContinouslyFusing_ && map_.hasFusedMapSubscribers()) {
         map_.fuseAll(true);
         map_.publishFusedElevationMap();
-    }
+    }*/
 
     resetMapUpdateTimer();
 }
 
 void ElevationMapping::publishFusedMapCallback(const ros::TimerEvent&)
 {
-    if (!map_.hasFusedMapSubscribers()) return;
+    //if (!map_.hasFusedMapSubscribers()) return;
     ROS_DEBUG("Elevation map is fused and published from timer.");
-    boost::recursive_mutex::scoped_lock scopedLock(map_.getFusedDataMutex());
-    map_.fuseAll(false);
-    map_.publishFusedElevationMap();
+    //boost::recursive_mutex::scoped_lock scopedLock(map_.getFusedDataMutex());
+    //map_.fuseAll(false);
+    //map_.publishFusedElevationMap();
 }
 
 bool ElevationMapping::fuseEntireMap(std_srvs::Empty::Request&, std_srvs::Empty::Response&)
 {
-    boost::recursive_mutex::scoped_lock scopedLock(map_.getFusedDataMutex());
-    map_.fuseAll(true);
-    map_.publishFusedElevationMap();
+    //boost::recursive_mutex::scoped_lock scopedLock(map_.getFusedDataMutex());
+    //map_.fuseAll(true);
+    //map_.publishFusedElevationMap();
     return true;
 }
 
@@ -397,12 +397,12 @@ bool ElevationMapping::getSubmap(grid_map_msgs::GetGridMap::Request& request, gr
         }
     }
 
-    boost::recursive_mutex::scoped_lock scopedLock(map_.getFusedDataMutex());
-    map_.fuseArea(requestedSubmapPosition, requestedSubmapLength, computeSurfaceNormals);
+    boost::recursive_mutex::scoped_lock scopedLock(map_.getRawDataMutex());
+    //map_.fuseArea(requestedSubmapPosition, requestedSubmapLength, computeSurfaceNormals);
 
     bool isSuccess;
     Index index;
-    GridMap subMap = map_.getFusedGridMap().getSubmap(requestedSubmapPosition, requestedSubmapLength, index, isSuccess);
+    GridMap subMap = map_.getRawGridMap().getSubmap(requestedSubmapPosition, requestedSubmapLength, index, isSuccess);
     scopedLock.unlock();
 
     if (request.layers.empty()) {
@@ -415,7 +415,7 @@ bool ElevationMapping::getSubmap(grid_map_msgs::GetGridMap::Request& request, gr
         GridMapRosConverter::toMessage(subMap, layers, response.map);
     }
 
-    ROS_DEBUG("Elevation submap responded with timestamp %f.", map_.getTimeOfLastFusion().toSec());
+   // ROS_DEBUG("Elevation submap responded with timestamp %f.", map_.getTimeOfLastFusion().toSec());
     return isSuccess;
 }
 
@@ -428,9 +428,9 @@ bool ElevationMapping::clearMap(std_srvs::Empty::Request& request, std_srvs::Emp
 bool ElevationMapping::saveToBag(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response)
 {
     ROS_INFO("Save to bag.");
-    boost::recursive_mutex::scoped_lock scopedLock(map_.getFusedDataMutex());
-    map_.fuseAll(true);
-    grid_map::GridMap gridMap = map_.getFusedGridMap();
+    boost::recursive_mutex::scoped_lock scopedLock(map_.getRawDataMutex());
+    //map_.fuseAll(true);
+    grid_map::GridMap gridMap = map_.getRawGridMap();
     std::string topic = "grid_map";
     return GridMapRosConverter::saveToBag(gridMap, pathToBag_, topic);
 }
