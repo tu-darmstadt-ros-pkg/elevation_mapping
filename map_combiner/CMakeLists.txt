@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   grid_map_core
   grid_map_msgs
   grid_map_ros
+  grid_map_cv
   nav_msgs
   roscpp
   dynamic_reconfigure
@@ -137,7 +138,7 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
-  include 
+  include
   ${catkin_INCLUDE_DIRS}
 )
 
