@@ -274,7 +274,7 @@ void ElevationMapping::pointCloudCallback(
     }
 
     // Publish elevation map.
-    map_.publishRawElevationMap();
+    //map_.publishRawElevationMap();
     /*if (isContinouslyFusing_ && map_.hasFusedMapSubscribers()) {
         map_.fuseAll(true);
         map_.publishFusedElevationMap();
@@ -316,6 +316,7 @@ void ElevationMapping::publishFusedMapCallback(const ros::TimerEvent&)
     //boost::recursive_mutex::scoped_lock scopedLock(map_.getFusedDataMutex());
     //map_.fuseAll(false);
     //map_.publishFusedElevationMap();
+    map_.publishRawElevationMap();
 }
 
 bool ElevationMapping::fuseEntireMap(std_srvs::Empty::Request&, std_srvs::Empty::Response&)

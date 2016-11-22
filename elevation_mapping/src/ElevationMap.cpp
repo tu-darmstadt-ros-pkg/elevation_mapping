@@ -149,24 +149,10 @@ bool ElevationMap::add(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, 
         }
 
         double mahalanobisDistance = sqrt(pow(point.z - elevation, 2) / variance);
+        float height_diff = point.z - elevation;
 
-        if (mahalanobisDistance < mahalanobisDistanceThreshold_)
+        if (mahalanobisDistance < mahalanobisDistanceThreshold_ || height_diff > 0)
         {
-            float diff = point.z - elevation;
-            float sigma_penalty = 1.0f + 5.f*(abs(diff)/0.01)*exp(-pow(abs(diff),2)/0.02); //1+x/sig*e^(-x^2/(2*sig))
-            //ROS_INFO("sigma_penalty = %f",sigma_penalty);
-
-            if(diff > 0)
-            {
-                variance *= sigma_penalty;
-            }
-            else
-            {
-                pointVariance *= sigma_penalty;
-
-            }
-
-
             // Fuse measurement with elevation map data.
             elevation = (variance * point.z + pointVariance * elevation) / (variance + pointVariance);
             variance =  (pointVariance * variance) / (pointVariance + variance);
