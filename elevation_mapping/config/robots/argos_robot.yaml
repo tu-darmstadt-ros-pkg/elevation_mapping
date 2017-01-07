@@ -7,3 +7,5 @@ track_point_frame_id: "base_link"
 track_point_x: 0.0
 track_point_y: 0.0
 track_point_z: 0.0
+min_update_rate: 0.5
+time_tolerance: 0.5
