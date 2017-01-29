@@ -527,20 +527,19 @@ void MapCombiner::segmentObstacleAt(const geometry_msgs::Pose& pose, const doubl
       array.markers.push_back(obstacle_marker_text_);
 
       obstacle_marker_pub_.publish(array);
+    }
+    
+    if (p_publish_percept_){
 
+      hector_worldmodel_msgs::PosePercept pose_percept;
 
-      if (p_publish_percept_){
+      pose_percept.header.frame_id = "world";
+      pose_percept.header.stamp = ros::Time::now();
+      pose_percept.info.class_id = "obstacle";
+      pose_percept.info.object_support = 1.0;
+      pose_percept.pose.pose = pose;
 
-        hector_worldmodel_msgs::PosePercept pose_percept;
-
-        pose_percept.header.frame_id = "world";
-        pose_percept.header.stamp = ros::Time::now();
-        pose_percept.info.class_id = "obstacle";
-        pose_percept.info.object_support = 1.0;
-        pose_percept.pose.pose = pose;
-
-        pose_percept_publisher_.publish(pose_percept);
-      }
+      pose_percept_publisher_.publish(pose_percept);
     }
 
 
