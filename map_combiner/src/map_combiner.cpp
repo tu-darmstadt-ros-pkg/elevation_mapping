@@ -13,6 +13,8 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <hector_worldmodel_msgs/PosePercept.h>
 
+#include <hazard_model_msgs/HazardObject.h>
+
 namespace map_combiner{
 
 MapCombiner::MapCombiner()
@@ -26,7 +28,9 @@ MapCombiner::MapCombiner()
   ros::NodeHandle flood_debug_nh("~/flood_fill_");
   flood_debug_img_provider_.reset(new CvDebugProvider(flood_debug_nh, sensor_msgs::image_encodings::RGB8, true));
 
-  pose_percept_publisher_ = pnh.advertise<hector_worldmodel_msgs::PosePercept>("/worldmodel/pose_percept", 5, false);pose_percept_publisher_ = pnh.advertise<hector_worldmodel_msgs::PosePercept>("/worldmodel/pose_percept", 5, false);
+  pose_percept_publisher_ = pnh.advertise<hector_worldmodel_msgs::PosePercept>("/worldmodel/pose_percept", 5, false);
+
+  hazard_object_publisher_ = pnh.advertise<hazard_model_msgs::HazardObject>("/hazard_model/hazard_update", 5, false);
 
   poly_debug_pub_ = pnh.advertise<geometry_msgs::PolygonStamped>("debug_poly", 1, false);
 
@@ -154,12 +158,12 @@ void MapCombiner::worldmodelCallback(const hector_worldmodel_msgs::ObjectModel& 
 void MapCombiner::poseCallback(const geometry_msgs::PoseStampedConstPtr& msg)
 {
   robot_pose_ = msg;
-  //this->segmentObstacleAt(grid_map::Position(msg->pose.position.x, msg->pose.position.y), 2.0);
+  this->segmentObstacleAt(grid_map::Position(msg->pose.position.x, msg->pose.position.y), 2.0);
 }
 
 void MapCombiner::collisionPoseCallback(const geometry_msgs::PoseStampedConstPtr& msg)
 {
-  this->segmentObstacleAt(msg->pose, 0.8);
+  //this->segmentObstacleAt(msg->pose, 0.8);
 }
 
 
@@ -320,8 +324,14 @@ bool MapCombiner::combineMaps()
   return true;
 }
 
+void MapCombiner::segmentObstacleAt(const geometry_msgs::Pose &pose, const double search_area_edge_length)
+{
+    grid_map::Position pos(pose.position.x, pose.position.y);
 
-void MapCombiner::segmentObstacleAt(const geometry_msgs::Pose& pose, const double search_area_edge_length)
+    this->segmentObstacleAt(pos, search_area_edge_length);
+}
+
+void MapCombiner::segmentObstacleAt(const grid_map::Position& pos, const double search_area_edge_length)
 {
   if (!local_elevation_map_.exists("elevation")){
     ROS_WARN("Elevation map not available, skipping obstacle segmentation!");
@@ -332,9 +342,6 @@ void MapCombiner::segmentObstacleAt(const geometry_msgs::Pose& pose, const doubl
     ROS_WARN("Cannot retrieve robot pose in obstacle segmentation, aborting.");
     return;
   }
-
-  grid_map::Position pos(pose.position.x, pose.position.y);
-
 
   float robot_elevation = robot_pose_->pose.position.z + p_pose_height_offset_;
 
@@ -529,7 +536,8 @@ void MapCombiner::segmentObstacleAt(const geometry_msgs::Pose& pose, const doubl
       obstacle_marker_pub_.publish(array);
     }
     
-    if (p_publish_percept_){
+    // Make sure we don't publish here ;)
+    if (false && p_publish_percept_){
 
       hector_worldmodel_msgs::PosePercept pose_percept;
 
@@ -537,12 +545,52 @@ void MapCombiner::segmentObstacleAt(const geometry_msgs::Pose& pose, const doubl
       pose_percept.header.stamp = ros::Time::now();
       pose_percept.info.class_id = "obstacle";
       pose_percept.info.object_support = 1.0;
-      pose_percept.pose.pose = pose;
+      //pose_percept.pose.pose = pose;
+
+      pose_percept.pose.pose.position.x = pos.x();
+      pose_percept.pose.pose.position.y = pos.y();
+      pose_percept.pose.pose.position.z = robot_pose_->pose.position.z;
+
+      pose_percept.pose.pose.orientation = robot_pose_->pose.orientation;
+
 
       pose_percept_publisher_.publish(pose_percept);
     }
 
+    hazard_model_msgs::HazardObject hazard_object;
 
+    hazard_object.shape.shape_type = hazard_model_msgs::HazardShape::SHAPE_RECTANGLE;
+    hazard_object.shape.rect_x = rect.size.width;
+    hazard_object.shape.rect_y = rect.size.height;
+
+
+    hazard_object.pose.header.frame_id = "world";
+    hazard_object.pose.header.stamp = ros::Time::now();
+
+    hazard_object.pose.pose.position.x = rect.center.x;
+    hazard_object.pose.pose.position.y = rect.center.y;
+    hazard_object.pose.pose.position.z = robot_pose_->pose.position.z;
+
+    hazard_object.pose.pose.orientation.w = cos(rect.angle*0.5f);
+    hazard_object.pose.pose.orientation.z = sin(rect.angle*0.5f);
+
+    //hazard_object.pose.pose.orientation = robot_pose_->pose.orientation;
+
+    hazard_object.last_seen_from_pose = *robot_pose_;
+
+    if (avg_elevation < 0.0){
+      hazard_object.type = hazard_model_msgs::HazardObject::TYPE_NEGATIVE_OBSTACLE;
+
+    // Positive
+    }else if (avg_elevation < 0.2){
+      hazard_object.type = hazard_model_msgs::HazardObject::TYPE_POSITIVE_OBSTACLE;
+
+    // Suspended
+    }else{
+      hazard_object.type = hazard_model_msgs::HazardObject::TYPE_OVERHANGING_OBSTACLE;
+    }
+
+    hazard_object_publisher_.publish(hazard_object);
 
 
   }

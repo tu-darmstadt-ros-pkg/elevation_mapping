@@ -24,6 +24,7 @@
 #include <hector_worldmodel_msgs/ObjectModel.h>
 
 
+
 #include <cv_debug_provider/cv_debug_provider.h>
 
 #include <grid_map_core/Polygon.hpp>
@@ -60,6 +61,7 @@ protected:
   void dynRecParamCallback(map_combiner::MapCombinerConfig &config, uint32_t level);
 
   void segmentObstacleAt(const geometry_msgs::Pose& pose, const double search_area_edge_length);
+  void segmentObstacleAt(const grid_map::Position& pos, const double search_area_edge_length);
 
   void publishFusedNavGrid();
   void callElevationMapReset();
@@ -78,6 +80,8 @@ protected:
   ros::Publisher fused_ros_map_pub_;
 
   ros::Publisher pose_percept_publisher_;
+
+  ros::Publisher hazard_object_publisher_;
 
   ros::Publisher obstacle_marker_pub_;
   visualization_msgs::Marker obstacle_marker_box_;

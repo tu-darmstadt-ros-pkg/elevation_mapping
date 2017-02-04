@@ -47,6 +47,7 @@
   <depend>grid_map_ros</depend>
   <depend>grid_map_cv</depend>
   <depend>nav_msgs</depend>
+  <depend>hazard_model_msgs</depend>
   <depend>roscpp</depend>
   <depend>dynamic_reconfigure</depend>
   <depend>cv_image_proc</depend>
