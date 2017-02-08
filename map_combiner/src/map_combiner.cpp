@@ -334,7 +334,7 @@ void MapCombiner::segmentObstacleAt(const geometry_msgs::Pose &pose, const doubl
 void MapCombiner::segmentObstacleAt(const grid_map::Position& pos, const double search_area_edge_length)
 {
   if (!local_elevation_map_.exists("elevation")){
-    ROS_WARN("Elevation map not available, skipping obstacle segmentation!");
+    ROS_WARN_THROTTLE(10.0, "Elevation map not available, skipping obstacle segmentation! This message is throttled(10s)");
     return;
   }
 
