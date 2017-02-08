@@ -420,18 +420,19 @@ void MapCombiner::segmentObstacleAt(const grid_map::Position& pos, const double 
       static_cut.getPosition(index, position);
 
       grid_map::Index elev_index;
-      local_elevation_map_.getIndex(position, elev_index);
+      if (local_elevation_map_.getIndex(position, elev_index)){
 
-      //std::cout << "re: " << robot_elevation << " elev: " << elev_data(index(0), index(1)) << "\n";
+        //std::cout << "re: " << robot_elevation << " elev: " << elev_data(index(0), index(1)) << "\n";
 
-      //std::cout << "re: " << robot_elevation << " elev: " << static_cut_inflated_data(index(0), index(1)) << "\n";
+        //std::cout << "re: " << robot_elevation << " elev: " << static_cut_inflated_data(index(0), index(1)) << "\n";
 
-      //if (static_data(index(0), index(1)) < 0.001){
+        //if (static_data(index(0), index(1)) < 0.001){
 
 
-      if ( std::abs( robot_elevation - elev_data(elev_index(0), elev_index(1)) ) > (p_obstacle_diff_threshold_ - 0.05) ){
-        obstacle_points.push_back(cv::Point2f(position.x(), position.y()));
-        obstacle_elevations.push_back(elev_data(elev_index(0), elev_index(1)));
+        if ( std::abs( robot_elevation - elev_data(elev_index(0), elev_index(1)) ) > (p_obstacle_diff_threshold_ - 0.05) ){
+          obstacle_points.push_back(cv::Point2f(position.x(), position.y()));
+          obstacle_elevations.push_back(elev_data(elev_index(0), elev_index(1)));
+        }
       }
     }
   }
