@@ -7,6 +7,7 @@
 #include <eigen_conversions/eigen_msg.h>
 
 #include <grid_map_proc/grid_map_polygon_tools.h>
+#include <grid_map_proc/grid_map_transforms.h>
 
 #include <grid_map_cv/grid_map_cv.hpp>
 
@@ -40,6 +41,8 @@ MapCombiner::MapCombiner()
   fused_map_pub_ = pnh.advertise<grid_map_msgs::GridMap>("/fused_grid_map", 1, false);
   fused_ros_map_pub_ = pnh.advertise<nav_msgs::OccupancyGrid>("/dynamic_map", 1, true);
 
+  //debug_map_pub_ = pnh.advertise<grid_map_msgs::GridMap>("/debug_grid_map", 1, false);
+
 
   reset_elev_map_service_client_ = pnh.serviceClient<std_srvs::Empty>("/elevation_mapping/clear_map");
 
@@ -71,7 +74,10 @@ void MapCombiner::staticMapCallback(const nav_msgs::OccupancyGrid& msg)
   static_map_fused_ = static_map_retrieved_;
 
 
-  this->updateInflatedLayer(static_map_retrieved_);
+  if (!this->updateInflatedLayer(static_map_retrieved_)){
+    ROS_ERROR("Failed generating inflation layer!");
+  }
+
   // Elevation map is reset as is assumed on new static map also
   // elevation data is outdated (i.e. floor change)
   this->callElevationMapReset();
@@ -665,6 +671,16 @@ void MapCombiner::dynRecParamCallback(map_combiner::MapCombinerConfig &config, u
 
 bool MapCombiner::updateInflatedLayer(grid_map::GridMap& map)
 {
+  bool success = grid_map_transforms::addInflatedLayer(map, 6.0);
+
+  //grid_map_msgs::GridMap msg;
+  //grid_map::GridMapRosConverter::toMessage(static_map_fused_, msg);
+
+  //debug_map_pub_.publish(msg);
+
+  return success;
+
+  /*
   cv::Mat static_map_cv_gray;
   //grid_map::GridMapRosConverter::toCvImage(map, "occupancy", static_map_cv);
   grid_map::GridMapCvConverter::toImage<unsigned char, 1>(map, "occupancy", CV_8UC1, 0.0, 1.0, static_map_cv_gray);
@@ -714,6 +730,7 @@ bool MapCombiner::updateInflatedLayer(grid_map::GridMap& map)
   grid_map::GridMapRosConverter::addLayerFromImage(*img.get(), "occupancy_inflated", map);
 
   return true;
+  */
 }
 
 }

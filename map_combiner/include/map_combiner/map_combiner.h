@@ -79,6 +79,8 @@ protected:
   ros::Publisher fused_map_pub_;
   ros::Publisher fused_ros_map_pub_;
 
+  //ros::Publisher debug_map_pub_;
+
   ros::Publisher pose_percept_publisher_;
 
   ros::Publisher hazard_object_publisher_;
