@@ -65,6 +65,7 @@ protected:
 
   void publishFusedNavGrid();
   void callElevationMapReset();
+  void callMasonMapReset();
 
   bool updateInflatedLayer(grid_map::GridMap& map);
 
@@ -118,6 +119,7 @@ protected:
   boost::shared_ptr<CvDebugProvider> flood_debug_img_provider_;
   ros::Publisher poly_debug_pub_;
   ros::Publisher obstacle_poly_pub_;
+  ros::Publisher mason_reset_pub_;
 };
 
 } /* namespace */

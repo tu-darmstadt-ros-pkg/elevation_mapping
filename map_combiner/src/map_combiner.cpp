@@ -16,6 +16,8 @@
 
 #include <hazard_model_msgs/HazardObject.h>
 
+#include <std_msgs/String.h>
+
 namespace map_combiner{
 
 MapCombiner::MapCombiner()
@@ -42,6 +44,8 @@ MapCombiner::MapCombiner()
   fused_ros_map_pub_ = pnh.advertise<nav_msgs::OccupancyGrid>("/dynamic_map", 1, true);
 
   //debug_map_pub_ = pnh.advertise<grid_map_msgs::GridMap>("/debug_grid_map", 1, false);
+
+  mason_reset_pub_ = pnh.advertise<std_msgs::String>("/mason/processing_manager/clear_plugin",4, false);
 
 
   reset_elev_map_service_client_ = pnh.serviceClient<std_srvs::Empty>("/elevation_mapping/clear_map");
@@ -640,9 +644,17 @@ void MapCombiner::callElevationMapReset()
   if (reset_elev_map_service_client_.call(srv)){
     ROS_INFO("Succesfully called reset elevation map service from map_combiner");
   }else{
-    ROS_WARN("Failed to call reset elevation map service from map_combiner!");
+    ROS_WARN_THROTTLE(10.0,"Failed to call reset elevation map service from map_combiner! This message is throttled.");
   }
 }
+
+void MapCombiner::callMasonMapReset()
+{
+  ROS_INFO("Sent reset request to Mason!");
+  std_msgs::String msg;
+  mason_reset_pub_.publish(msg);
+}
+
 
 void MapCombiner::initialPoseCallback(const geometry_msgs::PoseWithCovarianceStamped pose)
 {
@@ -651,6 +663,7 @@ void MapCombiner::initialPoseCallback(const geometry_msgs::PoseWithCovarianceSta
   static_map_fused_ = static_map_retrieved_;
 
   this->callElevationMapReset();
+  this->callMasonMapReset();
   this->publishFusedNavGrid();
 }
 
