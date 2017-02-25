@@ -55,10 +55,10 @@ MapCombiner::MapCombiner()
   pose_sub_ = pnh.subscribe("/robot_pose", 1, &MapCombiner::poseCallback, this);
   collision_pose_sub_ = pnh.subscribe("/collision_pose", 1, &MapCombiner::collisionPoseCallback, this);
 
-  static_map_sub_ = pnh.subscribe("/map", 1, &MapCombiner::staticMapCallback, this);
-  local_elevation_map_sub_ = pnh.subscribe("/elevation_mapping/elevation_map", 1, &MapCombiner::localElevationMapCallback, this);
+  //static_map_sub_ = pnh.subscribe("/map", 1, &MapCombiner::staticMapCallback, this);
+  //local_elevation_map_sub_ = pnh.subscribe("/elevation_mapping/elevation_map", 1, &MapCombiner::localElevationMapCallback, this);
 
-  worldmodel_sub_ = pnh.subscribe("/worldmodel/objects", 40, &MapCombiner::worldmodelCallback, this);
+  //worldmodel_sub_ = pnh.subscribe("/worldmodel/objects", 40, &MapCombiner::worldmodelCallback, this);
 
   obstacle_marker_box_.type = visualization_msgs::Marker::CUBE;
   obstacle_marker_box_.action = visualization_msgs::Marker::ADD;
@@ -168,7 +168,7 @@ void MapCombiner::worldmodelCallback(const hector_worldmodel_msgs::ObjectModel& 
 void MapCombiner::poseCallback(const geometry_msgs::PoseStampedConstPtr& msg)
 {
   robot_pose_ = msg;
-  this->segmentObstacleAt(grid_map::Position(msg->pose.position.x, msg->pose.position.y), 2.0);
+  //this->segmentObstacleAt(grid_map::Position(msg->pose.position.x, msg->pose.position.y), 2.0);
 }
 
 void MapCombiner::collisionPoseCallback(const geometry_msgs::PoseStampedConstPtr& msg)
@@ -664,7 +664,7 @@ void MapCombiner::initialPoseCallback(const geometry_msgs::PoseWithCovarianceSta
 
   this->callElevationMapReset();
   this->callMasonMapReset();
-  this->publishFusedNavGrid();
+  //this->publishFusedNavGrid();
 }
 
 void MapCombiner::dynRecParamCallback(map_combiner::MapCombinerConfig &config, uint32_t level)
