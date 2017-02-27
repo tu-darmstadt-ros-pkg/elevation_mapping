@@ -13,8 +13,6 @@
     <node pkg="elevation_mapping" type="odometry_to_pose_with_covariance" name="odometry_to_pose_with_covariance" output="screen">
     </node>
     -->
-  
-    <include file="$(find argo_onboard_launch)/launch/mason.launch"/>
 
     <node pkg="elevation_mapping" type="pose_to_pose_with_covariance" name="pose_to_pose_with_covariance" output="screen" respawn="true">
     </node>
