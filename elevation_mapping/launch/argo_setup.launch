@@ -14,10 +14,12 @@
     </node>
     -->
 
+    <!--    
     <node pkg="elevation_mapping" type="pose_to_pose_with_covariance" name="pose_to_pose_with_covariance" output="screen" respawn="true">
     </node>
+    -->
 
-    
+    <!--   
     <node pkg="vigir_laserscan_to_pointcloud" type="laserscan_to_pointcloud_node" name="move_group_scan_cloud_gen" respawn="true" output="screen">
       <param name="min_range" value="0" />
       <param name="use_high_fidelity_projection" value="true" />
@@ -26,7 +28,7 @@
       <remap from="scan_cloud" to="/move_group_scan_cloud" />
       <rosparam command="load" file="$(find vigir_laserscan_to_pointcloud)/config/argo_scan_filter.yaml" />
     </node>
-    
+    -->
     <!--Fused map visualization-->
     <!--    
     <node pkg="grid_map_visualization" type="grid_map_visualization" name="elevation_map_fused_visualization" output="screen" respawn="true">
