@@ -46,6 +46,9 @@
     </node>    
     
     <node pkg="hazard_model_lib" type="hazard_model_node" name="hazard_model" output="screen" respawn="true">
+      <rosparam param="object_update_threshold_distance">0.5</rosparam>
+      <rosparam param="max_age_type_obstacle">30.0</rosparam>
+      <rosparam param="max_age_type_person">5.0</rosparam>
     </node>    
     
     
