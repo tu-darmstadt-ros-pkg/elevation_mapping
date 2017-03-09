@@ -45,12 +45,13 @@
     <node pkg="navigation_collision_checker" type="path_collision_checker_node" name="path_collision_checker_node" output="screen" respawn="true">
     </node>    
 
+
     <node pkg="hazard_model_lib" type="hazard_model_node" name="hazard_model" output="screen" respawn="true">
+      <remap from="~/reset" to="/mason/processing_manager/clear_plugin" />
       <rosparam param="object_update_threshold_distance">0.5</rosparam>
       <rosparam param="min_obstacle_confidence">0.8</rosparam>
       <rosparam param="confidence_update_weight">0.3</rosparam>
       <rosparam param="max_age_type_obstacle">30.0</rosparam>
       <rosparam param="max_age_type_person">5.0</rosparam>
     </node>
-
 </launch>
