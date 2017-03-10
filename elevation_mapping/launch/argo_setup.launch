@@ -48,5 +48,7 @@
 
     <node pkg="hazard_model_lib" type="hazard_model_node" name="hazard_model" output="screen" respawn="true">
       <remap from="~/reset" to="/mason/processing_manager/clear_plugin" />
+      <remap from="~/set_ui_notification_enabled" to="/hector_obstacle_detection/set_processing_enabled" />
+      <remap from="~/ui_notification_enabled" to="/hector_obstacle_detection/processing_enabled" />
     </node>
 </launch>
