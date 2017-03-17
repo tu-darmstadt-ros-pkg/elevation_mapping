@@ -52,5 +52,6 @@
       <remap from="~/obstacle_detection_enabled" to="/hector_obstacle_detection/processing_enabled" />
       <remap from="~/set_person_detection_enabled" to="/hector_human_detection/set_processing_enabled" />
       <remap from="~/person_detection_enabled" to="/hector_human_detection/processing_enabled" />
+      <remap from="/human_close_to_robot" to= "/trash/human_close_to_robot" />
     </node>
 </launch>
