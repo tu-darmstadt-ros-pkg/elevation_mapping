@@ -60,9 +60,12 @@ class ElevationMap
    * Add new measurements to the elevation map.
    * @param pointCloud the point cloud data.
    * @param pointCloudVariances the corresponding variances of the point cloud data.
+   * @param timeStamp the time of the input point cloud.
+   * @param transformationSensorToMap
    * @return true if successful.
    */
-  bool add(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, Eigen::VectorXf& pointCloudVariances);
+  bool add(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, Eigen::VectorXf& pointCloudVariances,
+           const ros::Time& timeStamp, const Eigen::Affine3d& transformationSensorToMap);
 
   /*!
    * Update the elevation map with variance update data.
@@ -80,25 +83,30 @@ class ElevationMap
 
   /*!
    * Triggers the fusion of the entire elevation map.
-   * @param computeSurfaceNormals if the surface normals should be computed after the fusion step.
    * @return true if successful.
    */
-  bool fuseAll(const bool computeSurfaceNormals);
+  bool fuseAll();
 
   /*!
    * Fuses the elevation map for a certain rectangular area.
    * @param position the center position of the area to fuse.
    * @param length the sides lengths of the area to fuse.
-   * @param computeSurfaceNormals if the surface normals should be computed after the fusion step.
    * @return true if successful.
    */
-  bool fuseArea(const Eigen::Vector2d& position, const Eigen::Array2d& length, const bool computeSurfaceNormals);
+  bool fuseArea(const Eigen::Vector2d& position, const Eigen::Array2d& length);
 
   /*!
    * Clears all data of the elevation map (data and time).
    * @return true if successful.
    */
   bool clear();
+
+  /*!
+   * Removes parts of the map based on visibility criterion with ray tracing.
+   * @param transformationSensorToMap
+   * @param updatedTime
+   */
+  void visibilityCleanup(const ros::Time& updatedTime);
 
   /*!
    * Move the grid map w.r.t. to the grid map frame.
@@ -120,10 +128,10 @@ class ElevationMap
   bool publishFusedElevationMap();
 
   /*!
-   * Publishes the global fused elevation map.
+   * Publishes the (latest) visibility cleanup map.
    * @return true if successful.
    */
-  bool publishGlobalFusedElevationMap();
+  bool publishVisibilityCleanupMap();
 
   /*!
    * Gets a reference to the raw grid map.
@@ -221,20 +229,11 @@ class ElevationMap
    * Fuses a region of the map.
    * @param topLeftIndex the top left index of the region.
    * @param size the size (in number of cells) of the region.
-   * @param computeSurfaceNormals if the surface normals should be computed after the fusion step.
-   * @return true if successful.
-   */
-  bool fuse(const grid_map::Index& topLeftIndex, const grid_map::Index& size, const bool computeSurfaceNormals);
-
 
   bool fuseGlobal();
-  /*!
-   * Computes the surface normals of the fused elevation map for a region of the map.
-   * @param topLeftIndex the top left index of the region.
-   * @param size the size (in number of cells) of the region.
    * @return true if successful.
    */
-  bool computeSurfaceNormals(const Eigen::Array2i& topLeftIndex, const Eigen::Array2i& size);
+  bool fuse(const grid_map::Index& topLeftIndex, const grid_map::Index& size);
 
   /*!
    * Cleans the elevation map data to stay within the specified bounds.
@@ -267,6 +266,9 @@ class ElevationMap
   grid_map::GridMap fusedMap_;
   grid_map::GridMap fusedMap_global_;
 
+  //! Visibility cleanup debug map.
+  grid_map::GridMap visibilityCleanupMap_;
+
   //! Underlying map, used for ground truth maps, multi-robot mapping etc.
   grid_map::GridMap underlyingMap_;
 
@@ -279,7 +281,7 @@ class ElevationMap
   //! ROS publishers.
   ros::Publisher elevationMapRawPublisher_;
   ros::Publisher elevationMapFusedPublisher_;
-  ros::Publisher elevationMapFusedGlobalPublisher_;
+  ros::Publisher visbilityCleanupMapPublisher_;
 
   //! Mutex lock for fused map.
   boost::recursive_mutex fusedMapMutex_;
@@ -287,8 +289,14 @@ class ElevationMap
   //! Mutex lock for raw map.
   boost::recursive_mutex rawMapMutex_;
 
+  //! Mutex lock for vsibility cleanup map.
+  boost::recursive_mutex visibilityCleanupMapMutex_;
+
   //! Underlying map subscriber.
   ros::Subscriber underlyingMapSubscriber_;
+
+  //! Initial ros time
+  ros::Time initialTime_;
 
   //! Parameters. Are set through the ElevationMapping class.
   double minVariance_;
@@ -297,12 +305,10 @@ class ElevationMap
   double multiHeightNoise_;
   double minHorizontalVariance_;
   double maxHorizontalVariance_;
-  double surfaceNormalEstimationRadius_;
-  Eigen::Vector3d surfaceNormalPositiveAxis_;
   std::string underlyingMapTopic_;
-
-  grid_map::Length length_;
-  grid_map::Length initial_length_;
+  bool enableVisibilityCleanup_;
+  double visibilityCleanupDuration_;
+  double scanningDuration_;
   grid_map::Position position_;
   double resolution_;
 };
