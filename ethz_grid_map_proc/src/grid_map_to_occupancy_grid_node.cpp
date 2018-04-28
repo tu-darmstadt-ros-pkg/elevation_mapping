@@ -3,23 +3,30 @@
 #include <nav_msgs/OccupancyGrid.h>
 #include <std_msgs/String.h>
 
+#include <dynamic_reconfigure/server.h>
+#include <ethz_grid_map_proc/GridMapProcConfig.h>
+
 class GridMapToOccupancyGrid
 {
 public:
 
-  GridMapToOccupancyGrid(ros::NodeHandle nh) : nh_(nh)
+  GridMapToOccupancyGrid(ros::NodeHandle nh, ros::NodeHandle pnh) : nh_(nh) ,pnh_(pnh)
   {
+    dyn_rec_server_.reset(new ReconfigureServer(config_mutex_, pnh_));
+    dyn_rec_server_->setCallback(boost::bind(&GridMapToOccupancyGrid::reconfigureCallback, this, _1, _2));  
+      
+      
     global_traversability_map_.add("traversability");
          //grid_map_.add("update_time");
     global_traversability_map_.setGeometry(grid_map::Length(20.0, 20.0), 0.05);
     global_traversability_map_.setFrameId("world");
     
-    //@TODO: Clear global traversability map
+    //@TODO: Implement clearing of global traversability map
     this->clear();
 
     
-    occ_grid_pub_ = nh_.advertise<nav_msgs::OccupancyGrid>("/local_traversability_map", 1);
-    global_occ_grid_pub_ = nh_.advertise<nav_msgs::OccupancyGrid>("/local_traversability_map", 1);
+    occ_grid_pub_        = nh_.advertise<nav_msgs::OccupancyGrid>("/local_traversability_map", 1);
+    global_occ_grid_pub_ = nh_.advertise<nav_msgs::OccupancyGrid>("/map", 1);
 
 
     grid_map_sub_ = nh_.subscribe("/traversability_estimation/traversability_map", 1, &GridMapToOccupancyGrid::gridMapCallback, this);
@@ -34,18 +41,27 @@ public:
     //ROS_INFO("I heard: [%s]", msg->data.c_str());
 
 
-
-    nav_msgs::OccupancyGrid occupancy_grid;
     grid_map::GridMap map;
     grid_map::GridMapRosConverter::fromMessage(*msg, map);
-
+    
     // Insert current local traversability map into global map
     std::vector<std::string> layers_to_use;
     layers_to_use.push_back("traversability");
     global_traversability_map_.addDataFrom(map, true, true, false, layers_to_use);
 
-    grid_map::GridMapRosConverter::toOccupancyGrid(map, "traversability", 1.0, 0.0, occupancy_grid);
-    occ_grid_pub_.publish(occupancy_grid);
+    if (occ_grid_pub_.getNumSubscribers() > 0){
+      nav_msgs::OccupancyGrid occupancy_grid;
+      
+      grid_map::GridMapRosConverter::toOccupancyGrid(map, "traversability", 1.0, 0.0, occupancy_grid);
+      occ_grid_pub_.publish(occupancy_grid);
+    }
+    
+    if (global_occ_grid_pub_.getNumSubscribers() > 0){
+      nav_msgs::OccupancyGrid occupancy_grid;
+      
+      grid_map::GridMapRosConverter::toOccupancyGrid(global_traversability_map_, "traversability", 1.0, 0.0, occupancy_grid);
+      global_occ_grid_pub_.publish(occupancy_grid);  
+    }
   }
 
   void sysCommandCallback(const std_msgs::StringConstPtr msg)
@@ -57,7 +73,16 @@ public:
   
   void clear()
   {
-      //Clear global traversability map to be completely free space   
+      //Clear global traversability map to be completely free space
+    global_traversability_map_["traversability"].setZero();   
+  }
+  
+  void reconfigureCallback(ethz_grid_map_proc::GridMapProcConfig &config, uint32_t level) {
+  //ROS_INFO("Reconfigure Request: %d %f %s %s %d", 
+  //          config.int_param, config.double_param, 
+  //          config.str_param.c_str(), 
+  //          config.bool_param?"True":"False", 
+  //          config.size);
   }
   
 
@@ -71,9 +96,14 @@ private:
 
   
   ros::NodeHandle nh_;
+  ros::NodeHandle pnh_;
 
 
   grid_map::GridMap global_traversability_map_;
+  
+  typedef dynamic_reconfigure::Server<ethz_grid_map_proc::GridMapProcConfig> ReconfigureServer;
+  boost::shared_ptr<ReconfigureServer> dyn_rec_server_;
+  boost::recursive_mutex config_mutex_;
 };
 
 
@@ -81,8 +111,9 @@ int main(int argc, char *argv[])
 {
   ros::init(argc, argv, "grid_map_to_occupancy_grid_node");
   ros::NodeHandle nh;
-
-  GridMapToOccupancyGrid grid_map_to_occ_grid(nh);
+  ros::NodeHandle pnh("~");
+  
+  GridMapToOccupancyGrid grid_map_to_occ_grid(nh, pnh);
 
   ros::spin();
 
