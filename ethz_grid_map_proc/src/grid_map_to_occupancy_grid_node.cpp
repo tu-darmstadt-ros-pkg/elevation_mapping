@@ -74,16 +74,22 @@ public:
   void clear()
   {
       //Clear global traversability map to be completely free space
-    global_traversability_map_["traversability"].setZero();   
+    global_traversability_map_["traversability"].setOnes();   
   }
   
   void reconfigureCallback(ethz_grid_map_proc::GridMapProcConfig &config, uint32_t level) {
+      
+    
+    
+    p_occupied_threshold_ = config.occupied_threshold;
+    
+    ROS_INFO("Reconfigure Request. Occupied threshold: %f ", p_occupied_threshold_);
   //ROS_INFO("Reconfigure Request: %d %f %s %s %d", 
   //          config.int_param, config.double_param, 
   //          config.str_param.c_str(), 
   //          config.bool_param?"True":"False", 
   //          config.size);
-  }
+}
   
 
 private:
@@ -104,6 +110,8 @@ private:
   typedef dynamic_reconfigure::Server<ethz_grid_map_proc::GridMapProcConfig> ReconfigureServer;
   boost::shared_ptr<ReconfigureServer> dyn_rec_server_;
   boost::recursive_mutex config_mutex_;
+  
+  float p_occupied_threshold_;
 };
 
 
