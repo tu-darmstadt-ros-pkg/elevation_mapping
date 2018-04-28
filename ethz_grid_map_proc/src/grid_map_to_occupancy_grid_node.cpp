@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 #include <grid_map_ros/GridMapRosConverter.hpp>
 #include <nav_msgs/OccupancyGrid.h>
+#include <nav_msgs/Path.h>
 #include <std_msgs/String.h>
 
 #include <dynamic_reconfigure/server.h>
@@ -31,6 +32,7 @@ public:
 
     grid_map_sub_ = nh_.subscribe("/traversability_estimation/traversability_map", 1, &GridMapToOccupancyGrid::gridMapCallback, this);
     syscommand_sub_ = nh_.subscribe("/syscommand", 1, &GridMapToOccupancyGrid::sysCommandCallback, this);
+    path_sub_ = nh_.subscribe("/path_to_follow", 1, &GridMapToOccupancyGrid::pathCallback, this);
     
     
   }
@@ -57,12 +59,21 @@ public:
     }
     
     if (global_occ_grid_pub_.getNumSubscribers() > 0){
+        
+        
+        
+        
       nav_msgs::OccupancyGrid occupancy_grid;
       
       grid_map::GridMapRosConverter::toOccupancyGrid(global_traversability_map_, "traversability", 1.0, 0.0, occupancy_grid);
       global_occ_grid_pub_.publish(occupancy_grid);  
     }
   }
+  
+  void pathCallback(const nav_msgs::PathConstPtr msg)
+  {
+    path = *msg;
+  };
 
   void sysCommandCallback(const std_msgs::StringConstPtr msg)
   {
@@ -98,6 +109,7 @@ private:
     
   ros::Subscriber grid_map_sub_;
   ros::Subscriber syscommand_sub_;
+  ros::Subscriber path_sub_;
   
 
   
@@ -112,6 +124,8 @@ private:
   boost::recursive_mutex config_mutex_;
   
   float p_occupied_threshold_;
+  
+  nav_msgs::Path path;
 };
 
 
