@@ -1,5 +1,5 @@
 sensor_frame_id: "spin_lidar_pitch_hokuyo_laser_frame"
-point_cloud_topic: "/scan_matched_points2"
+point_cloud_topic: "/scan_matched_points2_cropped"
 map_frame_id: "world"
 robot_base_frame_id: "base_link"
 robot_pose_with_covariance_topic: "/pose_cov"
