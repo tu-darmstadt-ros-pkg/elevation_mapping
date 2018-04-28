@@ -57,6 +57,17 @@ public:
     layers_to_use.push_back("traversability");
     global_traversability_map_.addDataFrom(local_grid_map, true, true, false, layers_to_use);
 
+    for (size_t i = 0; i < path.poses.size(); ++i)
+    {
+      grid_map::Position pos(path.poses[i].pose.position.x, path.poses[i].pose.position.y);
+
+      for (grid_map::CircleIterator iterator(global_traversability_map_, pos, p_goal_clear_radius_);
+             !iterator.isPastEnd(); ++iterator) {
+      global_traversability_map_.at("traversability", *iterator) = 1.0;
+      }
+
+    }
+
     if (occ_grid_pub_.getNumSubscribers() > 0){
       nav_msgs::OccupancyGrid local_occupancy_grid;
       
@@ -79,14 +90,14 @@ public:
   void pathCallback(const nav_msgs::PathConstPtr msg)
   {
     path = *msg;
-  };
+  }
 
   void sysCommandCallback(const std_msgs::StringConstPtr msg)
   {
     if (msg->data == "reset"){
       this->clear();
     }
-  };
+  }
   
   void clear()
   {
@@ -99,8 +110,9 @@ public:
     
     
     p_occupied_threshold_ = config.occupied_threshold;
+    p_goal_clear_radius_ = config.goal_clear_radius;
     
-    ROS_INFO("Reconfigure Request. Occupied threshold: %f ", p_occupied_threshold_);
+    ROS_INFO("Reconfigure Request. Occupied threshold: %f clear radius:%f", p_occupied_threshold_, p_goal_clear_radius_);
   //ROS_INFO("Reconfigure Request: %d %f %s %s %d", 
   //          config.int_param, config.double_param, 
   //          config.str_param.c_str(), 
@@ -130,6 +142,7 @@ private:
   boost::recursive_mutex config_mutex_;
   
   float p_occupied_threshold_;
+  float p_goal_clear_radius_;
   
   nav_msgs::Path path;
 };
