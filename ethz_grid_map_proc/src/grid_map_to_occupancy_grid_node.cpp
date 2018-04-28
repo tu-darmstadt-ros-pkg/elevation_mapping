@@ -69,6 +69,40 @@ public:
 
     }
 
+    if (p_obstacle_u_forward_ || p_obstacle_u_backward_) {
+
+          grid_map::Position left_top    (p_obstacle_u_size_, p_obstacle_u_size_);
+          grid_map::Position left_bottom(-p_obstacle_u_size_, p_obstacle_u_size_);
+
+          for (grid_map::LineIterator iterator(global_traversability_map_,  left_top, left_bottom);
+              !iterator.isPastEnd(); ++iterator) {
+            global_traversability_map_.at("traversability", *iterator) = 0.0;
+          }
+
+          grid_map::Position right_top    (p_obstacle_u_size_, -p_obstacle_u_size_);
+          grid_map::Position right_bottom(-p_obstacle_u_size_, -p_obstacle_u_size_);
+
+          for (grid_map::LineIterator iterator(global_traversability_map_, right_top, right_bottom);
+              !iterator.isPastEnd(); ++iterator) {
+            global_traversability_map_.at("traversability", *iterator) = 0.0;
+          }
+
+          if (p_obstacle_u_forward_) {
+              for (grid_map::LineIterator iterator(global_traversability_map_, left_top, right_top);
+                  !iterator.isPastEnd(); ++iterator) {
+                global_traversability_map_.at("traversability", *iterator) = 0.0;
+              }
+          }
+
+          if (p_obstacle_u_backward_) {
+              for (grid_map::LineIterator iterator(global_traversability_map_, left_bottom, right_bottom);
+                  !iterator.isPastEnd(); ++iterator) {
+                global_traversability_map_.at("traversability", *iterator) = 0.0;
+              }
+          }
+
+    }
+
     if (occ_grid_pub_.getNumSubscribers() > 0){
       nav_msgs::OccupancyGrid local_occupancy_grid;
       
@@ -112,8 +146,13 @@ public:
     
     p_occupied_threshold_ = config.occupied_threshold;
     p_goal_clear_radius_ = config.goal_clear_radius;
+    p_obstacle_u_forward_ = config.obstacle_u_forward;
+    p_obstacle_u_backward_ = config.obstacle_u_backward;
+    p_obstacle_u_size_ = config.obstacle_u_size;
     
-    ROS_INFO("Reconfigure Request. Occupied threshold: %f clear radius:%f", p_occupied_threshold_, p_goal_clear_radius_);
+    ROS_INFO("Reconfigure Request. Occupied threshold: %f clear radius:%f, of: %s ,ob: %s", p_occupied_threshold_, p_goal_clear_radius_,
+             config.obstacle_u_forward?"True":"False",
+             config.obstacle_u_backward?"True":"False");
   //ROS_INFO("Reconfigure Request: %d %f %s %s %d", 
   //          config.int_param, config.double_param, 
   //          config.str_param.c_str(), 
@@ -144,6 +183,9 @@ private:
   
   float p_occupied_threshold_;
   float p_goal_clear_radius_;
+  bool p_obstacle_u_forward_;
+  bool p_obstacle_u_backward_;
+  float p_obstacle_u_size_;
   
   nav_msgs::Path path;
 };
