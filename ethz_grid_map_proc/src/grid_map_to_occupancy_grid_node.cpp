@@ -41,19 +41,25 @@ public:
     //ROS_INFO("I heard: [%s]", msg->data.c_str());
 
 
-    grid_map::GridMap map;
-    grid_map::GridMapRosConverter::fromMessage(*msg, map);
+    grid_map::GridMap local_grid_map;
+    grid_map::GridMapRosConverter::fromMessage(*msg, local_grid_map);
+
+    // Threshold map
+    grid_map::Matrix& data = local_grid_map["traversability"];
+    grid_map::Matrix zeros = data; zeros.setZero();
+    grid_map::Matrix ones = data; ones.setOnes();
+    data = (data.array() < p_occupied_threshold_).select(zeros, ones);
     
     // Insert current local traversability map into global map
     std::vector<std::string> layers_to_use;
     layers_to_use.push_back("traversability");
-    global_traversability_map_.addDataFrom(map, true, true, false, layers_to_use);
+    global_traversability_map_.addDataFrom(local_grid_map, true, true, false, layers_to_use);
 
     if (occ_grid_pub_.getNumSubscribers() > 0){
-      nav_msgs::OccupancyGrid occupancy_grid;
+      nav_msgs::OccupancyGrid local_occupancy_grid;
       
-      grid_map::GridMapRosConverter::toOccupancyGrid(map, "traversability", 1.0, 0.0, occupancy_grid);
-      occ_grid_pub_.publish(occupancy_grid);
+      grid_map::GridMapRosConverter::toOccupancyGrid(local_grid_map, "traversability", 1.0, 0.0, local_occupancy_grid);
+      occ_grid_pub_.publish(local_occupancy_grid);
     }
     
     if (global_occ_grid_pub_.getNumSubscribers() > 0){
