@@ -20,6 +20,7 @@ public:
     global_traversability_map_.add("traversability");
          //grid_map_.add("update_time");
     global_traversability_map_.setGeometry(grid_map::Length(20.0, 20.0), 0.05);
+
     global_traversability_map_.setFrameId("world");
     
     //@TODO: Implement clearing of global traversability map
@@ -48,8 +49,8 @@ public:
 
     // Threshold map
     grid_map::Matrix& data = local_grid_map["traversability"];
-    grid_map::Matrix zeros = data; zeros.setZero();
-    grid_map::Matrix ones = data; ones.setOnes();
+    grid_map::Matrix zeros = grid_map::Matrix::Zero(data.rows(), data.cols());
+    grid_map::Matrix ones = grid_map::Matrix::Ones(data.rows(), data.cols());
     data = (data.array() < p_occupied_threshold_).select(zeros, ones);
     
     // Insert current local traversability map into global map
