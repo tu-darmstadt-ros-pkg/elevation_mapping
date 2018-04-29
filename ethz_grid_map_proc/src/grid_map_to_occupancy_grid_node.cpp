@@ -44,6 +44,15 @@ public:
   void obstacleMapCallback(const nav_msgs::OccupancyGridConstPtr msg)
   {
       grid_map::GridMapRosConverter::fromOccupancyGrid(*msg, "obstacle", global_map_);
+
+    // fuse obstacle map with traversability map
+    global_map_["fused"] = global_map_["obstacle"].array().min(global_map_["traversability"].array());
+    // publish fused map
+    if (global_occ_grid_pub_.getNumSubscribers() > 0){
+      nav_msgs::OccupancyGrid occupancy_grid;
+      grid_map::GridMapRosConverter::toOccupancyGrid(global_map_, "fused", 1.0, 0.0, occupancy_grid);
+      global_occ_grid_pub_.publish(occupancy_grid);
+    }
   }
     
   void gridMapCallback(const grid_map_msgs::GridMapConstPtr msg)
@@ -219,7 +228,6 @@ int main(int argc, char *argv[])
   ros::spin();
 
   return 0;
-
 }
 
 
