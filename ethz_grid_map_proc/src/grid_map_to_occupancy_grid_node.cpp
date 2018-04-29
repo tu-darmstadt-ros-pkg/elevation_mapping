@@ -158,10 +158,7 @@ public:
   
   void clear()
   {
-      //Clear global traversability map to be completely free space
-    global_map_["traversability"].setOnes();
-    global_map_["obstacle"].setOnes();
-    global_map_["fused"].setOnes();
+    global_map_.clearAll();
   }
   
   void reconfigureCallback(ethz_grid_map_proc::GridMapProcConfig &config, uint32_t level) {
@@ -212,6 +209,7 @@ private:
   bool p_obstacle_u_forward_;
   bool p_obstacle_u_backward_;
   float p_obstacle_u_size_;
+  bool p_fusing_enabled_;
   
   nav_msgs::Path path;
 };
