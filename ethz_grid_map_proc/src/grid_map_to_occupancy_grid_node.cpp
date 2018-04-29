@@ -34,12 +34,17 @@ public:
     global_occ_grid_pub_ = nh_.advertise<nav_msgs::OccupancyGrid>("/map", 1);
 
 
+    //obstacle_grid_map_sub_ = nh_.subscribe("/obstacle_map_throttled", 1, &GridMapToOccupancyGrid::obstacleMapCallback, this);
+    
     grid_map_sub_ = nh_.subscribe("/traversability_estimation/traversability_map", 1, &GridMapToOccupancyGrid::gridMapCallback, this);
     syscommand_sub_ = nh_.subscribe("/syscommand", 1, &GridMapToOccupancyGrid::sysCommandCallback, this);
     path_sub_ = nh_.subscribe("/path_to_follow", 1, &GridMapToOccupancyGrid::pathCallback, this);
-        
   }
       
+  void obstacleMapCallback(const nav_msgs::OccupancyGridConstPtr msg)
+  {
+      
+  }
     
   void gridMapCallback(const grid_map_msgs::GridMapConstPtr msg)
   {
@@ -174,6 +179,7 @@ private:
   ros::Publisher occ_grid_raw_pub_;
   ros::Publisher global_occ_grid_pub_;  
     
+  ros::Subscriber obstacle_grid_map_sub_
   ros::Subscriber grid_map_sub_;
   ros::Subscriber syscommand_sub_;
   ros::Subscriber path_sub_;
