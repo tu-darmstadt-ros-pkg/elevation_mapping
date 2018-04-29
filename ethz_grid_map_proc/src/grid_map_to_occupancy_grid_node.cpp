@@ -17,7 +17,9 @@ public:
     dyn_rec_server_->setCallback(boost::bind(&GridMapToOccupancyGrid::reconfigureCallback, this, _1, _2));  
       
       
+    global_traversability_map_.add("obstacle");
     global_traversability_map_.add("traversability");
+    global_traversability_map_.add("fused");
          //grid_map_.add("update_time");
     global_traversability_map_.setGeometry(grid_map::Length(20.0, 20.0), 0.05);
 
@@ -35,8 +37,7 @@ public:
     grid_map_sub_ = nh_.subscribe("/traversability_estimation/traversability_map", 1, &GridMapToOccupancyGrid::gridMapCallback, this);
     syscommand_sub_ = nh_.subscribe("/syscommand", 1, &GridMapToOccupancyGrid::sysCommandCallback, this);
     path_sub_ = nh_.subscribe("/path_to_follow", 1, &GridMapToOccupancyGrid::pathCallback, this);
-    
-    
+        
   }
       
     
