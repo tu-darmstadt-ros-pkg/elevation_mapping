@@ -121,13 +121,13 @@ public:
       occ_grid_pub_.publish(local_occupancy_grid);
     }
     
-    if (global_occ_grid_pub_.getNumSubscribers() > 0){       
+//    if (global_occ_grid_pub_.getNumSubscribers() > 0){
         
-      nav_msgs::OccupancyGrid occupancy_grid;
+//      nav_msgs::OccupancyGrid occupancy_grid;
       
-      grid_map::GridMapRosConverter::toOccupancyGrid(global_map_, "traversability", 1.0, 0.0, occupancy_grid);
-      global_occ_grid_pub_.publish(occupancy_grid);  
-    }
+//      grid_map::GridMapRosConverter::toOccupancyGrid(global_map_, "traversability", 1.0, 0.0, occupancy_grid);
+//      global_occ_grid_pub_.publish(occupancy_grid);
+//    }
   }
   
   void pathCallback(const nav_msgs::PathConstPtr msg)
@@ -146,6 +146,8 @@ public:
   {
       //Clear global traversability map to be completely free space
     global_map_["traversability"].setOnes();
+    global_map_["obstacle"].setOnes();
+    global_map_["fused"].setOnes();
   }
   
   void reconfigureCallback(ethz_grid_map_proc::GridMapProcConfig &config, uint32_t level) {
