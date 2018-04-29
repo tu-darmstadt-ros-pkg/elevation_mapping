@@ -41,8 +41,12 @@ public:
       
   void obstacleMapCallback(const nav_msgs::OccupancyGridConstPtr msg)
   {
-    grid_map::GridMapRosConverter::fromOccupancyGrid(*msg, "obstacle", global_map_);
-//    ROS_INFO_STREAM("map: " << global_map_["obstacle"]);
+    grid_map::GridMap local_obstacle_map;
+    grid_map::GridMapRosConverter::fromOccupancyGrid(*msg, "obstacle", local_obstacle_map);
+    std::vector<std::string> layers_to_use;
+    layers_to_use.push_back("obstacle");
+    global_map_.addDataFrom(local_obstacle_map, true, true, false, layers_to_use);
+
     // fuse obstacle map with traversability map
     if (p_fusing_enabled_) {
       global_map_["fused"] = global_map_["obstacle"].cwiseMax(global_map_["traversability"]);
