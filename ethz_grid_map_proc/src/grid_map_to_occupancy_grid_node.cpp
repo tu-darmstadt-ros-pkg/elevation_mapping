@@ -43,7 +43,7 @@ public:
       
   void obstacleMapCallback(const nav_msgs::OccupancyGridConstPtr msg)
   {
-      
+      grid_map::GridMapRosConverter::fromOccupancyGrid(*msg, "obstacle", global_map_);
   }
     
   void gridMapCallback(const grid_map_msgs::GridMapConstPtr msg)
