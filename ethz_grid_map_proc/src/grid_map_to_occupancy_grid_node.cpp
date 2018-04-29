@@ -43,12 +43,16 @@ public:
       
   void obstacleMapCallback(const nav_msgs::OccupancyGridConstPtr msg)
   {
-      grid_map::GridMapRosConverter::fromOccupancyGrid(*msg, "obstacle", global_map_);
+    grid_map::GridMapRosConverter::fromOccupancyGrid(*msg, "obstacle", global_map_);
 
     // fuse obstacle map with traversability map
-    global_map_["fused"] = global_map_["obstacle"].array().min(global_map_["traversability"].array());
+    if (p_fusing_enabled_) {
+      global_map_["fused"] = global_map_["obstacle"].array().min(global_map_["traversability"].array());
+    } else {
+      global_map_["fused"] = global_map_["obstacle"];
+    }
     // publish fused map
-    if (global_occ_grid_pub_.getNumSubscribers() > 0){
+    if (global_occ_grid_pub_.getNumSubscribers() > 0) {
       nav_msgs::OccupancyGrid occupancy_grid;
       grid_map::GridMapRosConverter::toOccupancyGrid(global_map_, "fused", 1.0, 0.0, occupancy_grid);
       global_occ_grid_pub_.publish(occupancy_grid);
@@ -170,10 +174,12 @@ public:
     p_obstacle_u_forward_ = config.obstacle_u_forward;
     p_obstacle_u_backward_ = config.obstacle_u_backward;
     p_obstacle_u_size_ = config.obstacle_u_size;
+    p_fusing_enabled_ = config.fusing_enabled;
     
-    ROS_INFO("Reconfigure Request. Occupied threshold: %f clear radius:%f, of: %s ,ob: %s", p_occupied_threshold_, p_goal_clear_radius_,
+    ROS_INFO("Reconfigure Request. Occupied threshold: %f clear radius:%f, of: %s ,ob: %s, fusing: %s", p_occupied_threshold_, p_goal_clear_radius_,
              config.obstacle_u_forward?"True":"False",
-             config.obstacle_u_backward?"True":"False");
+             config.obstacle_u_backward?"True":"False",
+             config.fusing_enabled?"True":"False");
   //ROS_INFO("Reconfigure Request: %d %f %s %s %d", 
   //          config.int_param, config.double_param, 
   //          config.str_param.c_str(), 
