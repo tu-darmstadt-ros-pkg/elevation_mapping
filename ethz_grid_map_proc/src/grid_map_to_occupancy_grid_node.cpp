@@ -51,25 +51,17 @@ public:
 
     // fuse obstacle map with traversability map
     if (p_fusing_enabled_) {
-
-
-      global_map_["fused"] = global_map_["obstacle"].cwiseMax(global_map_["traversability"]);
-
-      /*
-      grid_map::Matrix& obstacle_data   = global_map_["elevation"];
-      grid_map::Matrix& traversability_data = global_map_["occupancy"];
+      grid_map::Matrix& obstacle_data   = global_map_["obstacle"];
+      grid_map::Matrix& traversability_data = global_map_["traversability"];
       grid_map::Matrix& fused_data = global_map_["fused"];
-
       for (grid_map::GridMapIterator iterator(global_map_); !iterator.isPastEnd(); ++iterator) {
         const grid_map::Index index(*iterator);
-
         if ( obstacle_data(index(0), index(1)) < traversability_data(index(0), index(1))){
-
+          fused_data(index(0), index(1)) = traversability_data(index(0), index(1));
+        } else {
+          fused_data(index(0), index(1)) = obstacle_data(index(0), index(1));
         }
       }
-      */
-
-
     } else {
       global_map_["fused"] = global_map_["obstacle"];
     }
@@ -103,8 +95,10 @@ public:
     }
     
     // Threshold map and convert traversability to obstacle
+    grid_map::Matrix& data = local_grid_map["traversability"];
     for (grid_map::GridMapIterator iterator(local_grid_map); !iterator.isPastEnd(); ++iterator) {
-      float& value = local_grid_map.at("traversability", *iterator);
+      const grid_map::Index index(*iterator);
+      float& value = data(index(0), index(1));
       if (std::isnan(value)) {
         continue;
       }
