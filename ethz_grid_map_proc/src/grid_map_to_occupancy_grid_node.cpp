@@ -51,7 +51,25 @@ public:
 
     // fuse obstacle map with traversability map
     if (p_fusing_enabled_) {
+
+
       global_map_["fused"] = global_map_["obstacle"].cwiseMax(global_map_["traversability"]);
+
+      /*
+      grid_map::Matrix& obstacle_data   = global_map_["elevation"];
+      grid_map::Matrix& traversability_data = global_map_["occupancy"];
+      grid_map::Matrix& fused_data = global_map_["fused"];
+
+      for (grid_map::GridMapIterator iterator(global_map_); !iterator.isPastEnd(); ++iterator) {
+        const grid_map::Index index(*iterator);
+
+        if ( obstacle_data(index(0), index(1)) < traversability_data(index(0), index(1))){
+
+        }
+      }
+      */
+
+
     } else {
       global_map_["fused"] = global_map_["obstacle"];
     }
