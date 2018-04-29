@@ -42,28 +42,26 @@ public:
   void obstacleMapCallback(const nav_msgs::OccupancyGridConstPtr msg)
   {
     grid_map::GridMapRosConverter::fromOccupancyGrid(*msg, "obstacle", global_map_);
-
+//    ROS_INFO_STREAM("map: " << global_map_["obstacle"]);
     // fuse obstacle map with traversability map
     if (p_fusing_enabled_) {
-      global_map_["fused"] = global_map_["obstacle"].array().max(global_map_["traversability"].array());
+      global_map_["fused"] = global_map_["obstacle"].cwiseMax(global_map_["traversability"]);
     } else {
       global_map_["fused"] = global_map_["obstacle"];
     }
     // publish fused map
     if (global_occ_grid_pub_.getNumSubscribers() > 0) {
       nav_msgs::OccupancyGrid occupancy_grid;
-      grid_map::GridMapRosConverter::toOccupancyGrid(global_map_, "fused", 0.0, 1.0, occupancy_grid);
+      grid_map::GridMapRosConverter::toOccupancyGrid(global_map_, "fused", 0.0, 100.0, occupancy_grid);
       global_occ_grid_pub_.publish(occupancy_grid);
     }
   }
     
   void gridMapCallback(const grid_map_msgs::GridMapConstPtr msg)
   {
-    //ROS_INFO("I heard: [%s]", msg->data.c_str());
-
-
     grid_map::GridMap local_grid_map;
     grid_map::GridMapRosConverter::fromMessage(*msg, local_grid_map);
+//    ROS_INFO_STREAM("map: " << local_grid_map["traversability"]);
     
     // Added because the local map is thresholded below
     if (occ_grid_raw_pub_.getNumSubscribers() > 0){
@@ -77,7 +75,7 @@ public:
     // Threshold map and convert traversability to obstacle
     grid_map::Matrix& data = local_grid_map["traversability"];
     grid_map::Matrix zeros = grid_map::Matrix::Zero(data.rows(), data.cols());
-    grid_map::Matrix ones = grid_map::Matrix::Ones(data.rows(), data.cols());
+    grid_map::Matrix ones = grid_map::Matrix::Constant(data.rows(), data.cols(), 100);
     data = (data.array() < p_occupied_threshold_).select(ones, zeros); // also inverts matrix
     
     // Insert current local traversability map into global map
@@ -105,7 +103,7 @@ public:
 
           for (grid_map::LineIterator iterator(global_map_,  left_top, left_bottom);
               !iterator.isPastEnd(); ++iterator) {
-            global_map_.at("traversability", *iterator) = 1.0;
+            global_map_.at("traversability", *iterator) = 100.0;
           }
 
           grid_map::Position right_top    (p_obstacle_u_size_, -p_obstacle_u_size_);
@@ -113,20 +111,20 @@ public:
 
           for (grid_map::LineIterator iterator(global_map_, right_top, right_bottom);
               !iterator.isPastEnd(); ++iterator) {
-            global_map_.at("traversability", *iterator) = 1.0;
+            global_map_.at("traversability", *iterator) = 100.0;
           }
 
           if (p_obstacle_u_forward_) {
               for (grid_map::LineIterator iterator(global_map_, left_top, right_top);
                   !iterator.isPastEnd(); ++iterator) {
-                global_map_.at("traversability", *iterator) = 1.0;
+                global_map_.at("traversability", *iterator) = 100.0;
               }
           }
 
           if (p_obstacle_u_backward_) {
               for (grid_map::LineIterator iterator(global_map_, left_bottom, right_bottom);
                   !iterator.isPastEnd(); ++iterator) {
-                global_map_.at("traversability", *iterator) = 1.0;
+                global_map_.at("traversability", *iterator) = 100.0;
               }
           }
 
@@ -135,7 +133,7 @@ public:
     if (occ_grid_pub_.getNumSubscribers() > 0){
       nav_msgs::OccupancyGrid local_occupancy_grid;
       
-      grid_map::GridMapRosConverter::toOccupancyGrid(local_grid_map, "traversability", 0.0, 1.0, local_occupancy_grid);
+      grid_map::GridMapRosConverter::toOccupancyGrid(local_grid_map, "traversability", 0.0, 100.0, local_occupancy_grid);
       occ_grid_pub_.publish(local_occupancy_grid);
     }
     
