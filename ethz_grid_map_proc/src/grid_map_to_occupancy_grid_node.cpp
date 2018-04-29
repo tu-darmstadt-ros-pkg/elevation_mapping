@@ -25,11 +25,9 @@ public:
 
     global_map_.setFrameId("world");
     
-    //@TODO: Implement clearing of global traversability map
     this->clear();
-
     
-    occ_grid_raw_pub_        = nh_.advertise<nav_msgs::OccupancyGrid>("/local_traversability_map_raw", 1);
+    occ_grid_raw_pub_    = nh_.advertise<nav_msgs::OccupancyGrid>("/local_traversability_map_raw", 1);
     occ_grid_pub_        = nh_.advertise<nav_msgs::OccupancyGrid>("/local_traversability_map", 1);
     global_occ_grid_pub_ = nh_.advertise<nav_msgs::OccupancyGrid>("/map", 1);
 
@@ -47,14 +45,14 @@ public:
 
     // fuse obstacle map with traversability map
     if (p_fusing_enabled_) {
-      global_map_["fused"] = global_map_["obstacle"].array().min(global_map_["traversability"].array());
+      global_map_["fused"] = global_map_["obstacle"].array().max(global_map_["traversability"].array());
     } else {
       global_map_["fused"] = global_map_["obstacle"];
     }
     // publish fused map
     if (global_occ_grid_pub_.getNumSubscribers() > 0) {
       nav_msgs::OccupancyGrid occupancy_grid;
-      grid_map::GridMapRosConverter::toOccupancyGrid(global_map_, "fused", 1.0, 0.0, occupancy_grid);
+      grid_map::GridMapRosConverter::toOccupancyGrid(global_map_, "fused", 0.0, 1.0, occupancy_grid);
       global_occ_grid_pub_.publish(occupancy_grid);
     }
   }
@@ -76,28 +74,30 @@ public:
     }
     
 
-    // Threshold map
+    // Threshold map and convert traversability to obstacle
     grid_map::Matrix& data = local_grid_map["traversability"];
     grid_map::Matrix zeros = grid_map::Matrix::Zero(data.rows(), data.cols());
     grid_map::Matrix ones = grid_map::Matrix::Ones(data.rows(), data.cols());
-    data = (data.array() < p_occupied_threshold_).select(zeros, ones);
+    data = (data.array() < p_occupied_threshold_).select(ones, zeros); // also inverts matrix
     
     // Insert current local traversability map into global map
     std::vector<std::string> layers_to_use;
     layers_to_use.push_back("traversability");
     global_map_.addDataFrom(local_grid_map, true, true, false, layers_to_use);
 
+    // Clear waypoints
     for (size_t i = 0; i < path.poses.size(); ++i)
     {
       grid_map::Position pos(path.poses[i].pose.position.x, path.poses[i].pose.position.y);
 
       for (grid_map::CircleIterator iterator(global_map_, pos, p_goal_clear_radius_);
              !iterator.isPastEnd(); ++iterator) {
-      global_map_.at("traversability", *iterator) = 1.0;
+      global_map_.at("traversability", *iterator) = 0.0;
       }
 
     }
 
+    // Create obstacle U so robot drives forward/backward
     if (p_obstacle_u_forward_ || p_obstacle_u_backward_) {
 
           grid_map::Position left_top    (p_obstacle_u_size_, p_obstacle_u_size_);
@@ -105,7 +105,7 @@ public:
 
           for (grid_map::LineIterator iterator(global_map_,  left_top, left_bottom);
               !iterator.isPastEnd(); ++iterator) {
-            global_map_.at("traversability", *iterator) = 0.0;
+            global_map_.at("traversability", *iterator) = 1.0;
           }
 
           grid_map::Position right_top    (p_obstacle_u_size_, -p_obstacle_u_size_);
@@ -113,20 +113,20 @@ public:
 
           for (grid_map::LineIterator iterator(global_map_, right_top, right_bottom);
               !iterator.isPastEnd(); ++iterator) {
-            global_map_.at("traversability", *iterator) = 0.0;
+            global_map_.at("traversability", *iterator) = 1.0;
           }
 
           if (p_obstacle_u_forward_) {
               for (grid_map::LineIterator iterator(global_map_, left_top, right_top);
                   !iterator.isPastEnd(); ++iterator) {
-                global_map_.at("traversability", *iterator) = 0.0;
+                global_map_.at("traversability", *iterator) = 1.0;
               }
           }
 
           if (p_obstacle_u_backward_) {
               for (grid_map::LineIterator iterator(global_map_, left_bottom, right_bottom);
                   !iterator.isPastEnd(); ++iterator) {
-                global_map_.at("traversability", *iterator) = 0.0;
+                global_map_.at("traversability", *iterator) = 1.0;
               }
           }
 
@@ -135,7 +135,7 @@ public:
     if (occ_grid_pub_.getNumSubscribers() > 0){
       nav_msgs::OccupancyGrid local_occupancy_grid;
       
-      grid_map::GridMapRosConverter::toOccupancyGrid(local_grid_map, "traversability", 1.0, 0.0, local_occupancy_grid);
+      grid_map::GridMapRosConverter::toOccupancyGrid(local_grid_map, "traversability", 0.0, 1.0, local_occupancy_grid);
       occ_grid_pub_.publish(local_occupancy_grid);
     }
     
@@ -165,10 +165,8 @@ public:
     global_map_.clearAll();
   }
   
-  void reconfigureCallback(ethz_grid_map_proc::GridMapProcConfig &config, uint32_t level) {
-      
-    
-    
+  void reconfigureCallback(ethz_grid_map_proc::GridMapProcConfig &config, uint32_t level)
+  {
     p_occupied_threshold_ = config.occupied_threshold;
     p_goal_clear_radius_ = config.goal_clear_radius;
     p_obstacle_u_forward_ = config.obstacle_u_forward;
@@ -180,12 +178,7 @@ public:
              config.obstacle_u_forward?"True":"False",
              config.obstacle_u_backward?"True":"False",
              config.fusing_enabled?"True":"False");
-  //ROS_INFO("Reconfigure Request: %d %f %s %s %d", 
-  //          config.int_param, config.double_param, 
-  //          config.str_param.c_str(), 
-  //          config.bool_param?"True":"False", 
-  //          config.size);
-}
+  }
   
 
 private:
