@@ -27,6 +27,7 @@ public:
     this->clear();
 
     
+    occ_grid_raw_pub_        = nh_.advertise<nav_msgs::OccupancyGrid>("/local_traversability_map_raw", 1);
     occ_grid_pub_        = nh_.advertise<nav_msgs::OccupancyGrid>("/local_traversability_map", 1);
     global_occ_grid_pub_ = nh_.advertise<nav_msgs::OccupancyGrid>("/map", 1);
 
@@ -46,6 +47,15 @@ public:
 
     grid_map::GridMap local_grid_map;
     grid_map::GridMapRosConverter::fromMessage(*msg, local_grid_map);
+    
+    // Added because the local map is thresholded below
+    if (occ_grid_raw_pub_.getNumSubscribers() > 0){
+      nav_msgs::OccupancyGrid local_occupancy_grid;
+      
+      grid_map::GridMapRosConverter::toOccupancyGrid(local_grid_map, "traversability", 1.0, 0.0, local_occupancy_grid);
+      occ_grid_raw_pub_.publish(local_occupancy_grid);
+    }
+    
 
     // Threshold map
     grid_map::Matrix& data = local_grid_map["traversability"];
@@ -110,10 +120,7 @@ public:
       occ_grid_pub_.publish(local_occupancy_grid);
     }
     
-    if (global_occ_grid_pub_.getNumSubscribers() > 0){
-        
-        
-        
+    if (global_occ_grid_pub_.getNumSubscribers() > 0){       
         
       nav_msgs::OccupancyGrid occupancy_grid;
       
@@ -163,6 +170,7 @@ public:
 
 private:
   ros::Publisher occ_grid_pub_;
+  ros::Publisher occ_grid_raw_pub_;
   ros::Publisher global_occ_grid_pub_;  
     
   ros::Subscriber grid_map_sub_;
