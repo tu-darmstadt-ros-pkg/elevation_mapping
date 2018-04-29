@@ -17,13 +17,13 @@ public:
     dyn_rec_server_->setCallback(boost::bind(&GridMapToOccupancyGrid::reconfigureCallback, this, _1, _2));  
       
       
-    global_traversability_map_.add("obstacle");
-    global_traversability_map_.add("traversability");
-    global_traversability_map_.add("fused");
+    global_map_.add("obstacle");
+    global_map_.add("traversability");
+    global_map_.add("fused");
          //grid_map_.add("update_time");
-    global_traversability_map_.setGeometry(grid_map::Length(20.0, 20.0), 0.05);
+    global_map_.setGeometry(grid_map::Length(20.0, 20.0), 0.05);
 
-    global_traversability_map_.setFrameId("world");
+    global_map_.setFrameId("world");
     
     //@TODO: Implement clearing of global traversability map
     this->clear();
@@ -67,15 +67,15 @@ public:
     // Insert current local traversability map into global map
     std::vector<std::string> layers_to_use;
     layers_to_use.push_back("traversability");
-    global_traversability_map_.addDataFrom(local_grid_map, true, true, false, layers_to_use);
+    global_map_.addDataFrom(local_grid_map, true, true, false, layers_to_use);
 
     for (size_t i = 0; i < path.poses.size(); ++i)
     {
       grid_map::Position pos(path.poses[i].pose.position.x, path.poses[i].pose.position.y);
 
-      for (grid_map::CircleIterator iterator(global_traversability_map_, pos, p_goal_clear_radius_);
+      for (grid_map::CircleIterator iterator(global_map_, pos, p_goal_clear_radius_);
              !iterator.isPastEnd(); ++iterator) {
-      global_traversability_map_.at("traversability", *iterator) = 1.0;
+      global_map_.at("traversability", *iterator) = 1.0;
       }
 
     }
@@ -85,30 +85,30 @@ public:
           grid_map::Position left_top    (p_obstacle_u_size_, p_obstacle_u_size_);
           grid_map::Position left_bottom(-p_obstacle_u_size_, p_obstacle_u_size_);
 
-          for (grid_map::LineIterator iterator(global_traversability_map_,  left_top, left_bottom);
+          for (grid_map::LineIterator iterator(global_map_,  left_top, left_bottom);
               !iterator.isPastEnd(); ++iterator) {
-            global_traversability_map_.at("traversability", *iterator) = 0.0;
+            global_map_.at("traversability", *iterator) = 0.0;
           }
 
           grid_map::Position right_top    (p_obstacle_u_size_, -p_obstacle_u_size_);
           grid_map::Position right_bottom(-p_obstacle_u_size_, -p_obstacle_u_size_);
 
-          for (grid_map::LineIterator iterator(global_traversability_map_, right_top, right_bottom);
+          for (grid_map::LineIterator iterator(global_map_, right_top, right_bottom);
               !iterator.isPastEnd(); ++iterator) {
-            global_traversability_map_.at("traversability", *iterator) = 0.0;
+            global_map_.at("traversability", *iterator) = 0.0;
           }
 
           if (p_obstacle_u_forward_) {
-              for (grid_map::LineIterator iterator(global_traversability_map_, left_top, right_top);
+              for (grid_map::LineIterator iterator(global_map_, left_top, right_top);
                   !iterator.isPastEnd(); ++iterator) {
-                global_traversability_map_.at("traversability", *iterator) = 0.0;
+                global_map_.at("traversability", *iterator) = 0.0;
               }
           }
 
           if (p_obstacle_u_backward_) {
-              for (grid_map::LineIterator iterator(global_traversability_map_, left_bottom, right_bottom);
+              for (grid_map::LineIterator iterator(global_map_, left_bottom, right_bottom);
                   !iterator.isPastEnd(); ++iterator) {
-                global_traversability_map_.at("traversability", *iterator) = 0.0;
+                global_map_.at("traversability", *iterator) = 0.0;
               }
           }
 
@@ -125,7 +125,7 @@ public:
         
       nav_msgs::OccupancyGrid occupancy_grid;
       
-      grid_map::GridMapRosConverter::toOccupancyGrid(global_traversability_map_, "traversability", 1.0, 0.0, occupancy_grid);
+      grid_map::GridMapRosConverter::toOccupancyGrid(global_map_, "traversability", 1.0, 0.0, occupancy_grid);
       global_occ_grid_pub_.publish(occupancy_grid);  
     }
   }
@@ -145,7 +145,7 @@ public:
   void clear()
   {
       //Clear global traversability map to be completely free space
-    global_traversability_map_["traversability"].setOnes();   
+    global_map_["traversability"].setOnes();
   }
   
   void reconfigureCallback(ethz_grid_map_proc::GridMapProcConfig &config, uint32_t level) {
@@ -184,7 +184,7 @@ private:
   ros::NodeHandle pnh_;
 
 
-  grid_map::GridMap global_traversability_map_;
+  grid_map::GridMap global_map_;
   
   typedef dynamic_reconfigure::Server<ethz_grid_map_proc::GridMapProcConfig> ReconfigureServer;
   boost::shared_ptr<ReconfigureServer> dyn_rec_server_;
