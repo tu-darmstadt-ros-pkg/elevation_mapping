@@ -21,7 +21,7 @@ public:
     global_map_.add("traversability");
     global_map_.add("fused");
          //grid_map_.add("update_time");
-    //global_map_.setGeometry(grid_map::Length(20.0, 20.0), 0.05);
+    global_map_.setGeometry(grid_map::Length(20.0, 20.0), 0.05);
 
     global_map_.setFrameId("world");
     
@@ -84,12 +84,18 @@ public:
       occ_grid_raw_pub_.publish(local_occupancy_grid);
     }
     
-
     // Threshold map and convert traversability to obstacle
-    grid_map::Matrix& data = local_grid_map["traversability"];
-    grid_map::Matrix free = grid_map::Matrix::Zero(data.rows(), data.cols());
-    grid_map::Matrix occupied = grid_map::Matrix::Constant(data.rows(), data.cols(), 100);
-    data = (data.array() < p_occupied_threshold_).select(occupied, free); // also inverts matrix
+    for (grid_map::GridMapIterator iterator(local_grid_map); !iterator.isPastEnd(); ++iterator) {
+      float& value = local_grid_map.at("traversability", *iterator);
+      if (std::isnan(value)) {
+        continue;
+      }
+      if (value < p_occupied_threshold_) {
+        value = 100;
+      } else {
+        value = 0;
+      }
+    }
     
     // Insert current local traversability map into global map
     std::vector<std::string> layers_to_use;
