@@ -74,9 +74,9 @@ public:
 
     // Threshold map and convert traversability to obstacle
     grid_map::Matrix& data = local_grid_map["traversability"];
-    grid_map::Matrix zeros = grid_map::Matrix::Zero(data.rows(), data.cols());
-    grid_map::Matrix ones = grid_map::Matrix::Constant(data.rows(), data.cols(), 100);
-    data = (data.array() < p_occupied_threshold_).select(ones, zeros); // also inverts matrix
+    grid_map::Matrix free = grid_map::Matrix::Zero(data.rows(), data.cols());
+    grid_map::Matrix occupied = grid_map::Matrix::Constant(data.rows(), data.cols(), 100);
+    data = (data.array() < p_occupied_threshold_).select(occupied, free); // also inverts matrix
     
     // Insert current local traversability map into global map
     std::vector<std::string> layers_to_use;
