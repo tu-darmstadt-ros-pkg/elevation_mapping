@@ -21,7 +21,7 @@ public:
     global_map_.add("traversability");
     global_map_.add("fused");
          //grid_map_.add("update_time");
-    global_map_.setGeometry(grid_map::Length(20.0, 20.0), 0.05);
+    //global_map_.setGeometry(grid_map::Length(20.0, 20.0), 0.05);
 
     global_map_.setFrameId("world");
     
@@ -30,6 +30,8 @@ public:
     occ_grid_raw_pub_    = nh_.advertise<nav_msgs::OccupancyGrid>("/local_traversability_map_raw", 1);
     occ_grid_pub_        = nh_.advertise<nav_msgs::OccupancyGrid>("/local_traversability_map", 1);
     global_occ_grid_pub_ = nh_.advertise<nav_msgs::OccupancyGrid>("/map", 1);
+
+    grid_map_pub_ = nh_.advertise<grid_map_msgs::GridMap>("/global_map_debug", 1);
 
 
     obstacle_grid_map_sub_ = nh_.subscribe("/obstacle_map_throttled", 1, &GridMapToOccupancyGrid::obstacleMapCallback, this);
@@ -54,6 +56,13 @@ public:
       nav_msgs::OccupancyGrid occupancy_grid;
       grid_map::GridMapRosConverter::toOccupancyGrid(global_map_, "fused", 0.0, 1.0, occupancy_grid);
       global_occ_grid_pub_.publish(occupancy_grid);
+    }
+
+    if (grid_map_pub_.getNumSubscribers() >0 )
+    {
+      grid_map_msgs::GridMap grid_map_msg;
+      grid_map::GridMapRosConverter::toMessage(global_map_, grid_map_msg);
+      grid_map_pub_.publish(grid_map_msg);
     }
   }
     
@@ -132,6 +141,14 @@ public:
 
     }
 
+    if (grid_map_pub_.getNumSubscribers() >0 )
+    {
+      grid_map_msgs::GridMap grid_map_msg;
+      grid_map::GridMapRosConverter::toMessage(global_map_, grid_map_msg);
+      grid_map_pub_.publish(grid_map_msg);
+    }
+
+
     if (occ_grid_pub_.getNumSubscribers() > 0){
       nav_msgs::OccupancyGrid local_occupancy_grid;
       
@@ -184,7 +201,9 @@ public:
 private:
   ros::Publisher occ_grid_pub_;
   ros::Publisher occ_grid_raw_pub_;
-  ros::Publisher global_occ_grid_pub_;  
+  ros::Publisher global_occ_grid_pub_;
+
+  ros::Publisher grid_map_pub_;
     
   ros::Subscriber obstacle_grid_map_sub_;
   ros::Subscriber grid_map_sub_;
