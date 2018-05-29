@@ -156,7 +156,7 @@ bool ElevationMap::add(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, 
   rawMap_.setTimestamp(timestamp.toNSec()); // Point cloud stores time in microseconds.
 
   const ros::WallDuration duration = ros::WallTime::now() - methodStartTime;
-  ROS_INFO("Raw map has been updated with a new point cloud in %f s.", duration.toSec());
+  ROS_DEBUG("Raw map has been updated with a new point cloud in %f s.", duration.toSec());
   return true;
 }
 
@@ -466,7 +466,7 @@ void ElevationMap::visibilityCleanup(const ros::Time& updatedTime)
   publishVisibilityCleanupMap();
 
   ros::WallDuration duration(ros::WallTime::now() - methodStartTime);
-  ROS_INFO("Visibility cleanup has been performed in %f s (%d points).", duration.toSec(), (int)cellPositionsToRemove.size());
+  ROS_DEBUG("Visibility cleanup has been performed in %f s (%d points).", duration.toSec(), (int)cellPositionsToRemove.size());
   if(duration.toSec() > visibilityCleanupDuration_)
     ROS_WARN("Visibility cleanup duration is too high (current rate is %f).", 1.0 / duration.toSec());
 }
@@ -621,7 +621,7 @@ bool ElevationMap::hasFusedMapSubscribers() const
 
 void ElevationMap::underlyingMapCallback(const grid_map_msgs::GridMap& underlyingMap)
 {
-  ROS_INFO("Updating underlying map.");
+  ROS_DEBUG("Updating underlying map.");
   GridMapRosConverter::fromMessage(underlyingMap, underlyingMap_);
   if (underlyingMap_.getFrameId() != rawMap_.getFrameId()) {
     ROS_ERROR_STREAM("The underlying map does not have the same map frame ('" <<underlyingMap_.getFrameId()
