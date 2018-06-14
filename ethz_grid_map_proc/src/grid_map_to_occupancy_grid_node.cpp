@@ -113,6 +113,8 @@ public:
     std::vector<std::string> layers_to_use;
     layers_to_use.push_back("traversability");
     global_map_.addDataFrom(local_grid_map, true, true, false, layers_to_use);
+    
+    grid_map::Matrix& traversability_data = global_map_["traversability"];
 
     // Clear waypoints
     for (size_t i = 0; i < path.poses.size(); ++i)
@@ -121,7 +123,8 @@ public:
 
       for (grid_map::CircleIterator iterator(global_map_, pos, p_goal_clear_radius_);
              !iterator.isPastEnd(); ++iterator) {
-      global_map_.at("traversability", *iterator) = 0.0;
+        const grid_map::Index index(*iterator);
+        traversability_data(index(0), index(1)) = 0.0;    
       }
 
     }
@@ -134,7 +137,8 @@ public:
 
           for (grid_map::LineIterator iterator(global_map_,  left_top, left_bottom);
               !iterator.isPastEnd(); ++iterator) {
-            global_map_.at("traversability", *iterator) = 100.0;
+            const grid_map::Index index(*iterator);
+            traversability_data(index(0), index(1)) = 100.0;    
           }
 
           grid_map::Position right_top    (p_obstacle_u_size_, -p_obstacle_u_size_);
@@ -142,20 +146,23 @@ public:
 
           for (grid_map::LineIterator iterator(global_map_, right_top, right_bottom);
               !iterator.isPastEnd(); ++iterator) {
-            global_map_.at("traversability", *iterator) = 100.0;
+            const grid_map::Index index(*iterator);
+            traversability_data(index(0), index(1)) = 100.0;
           }
 
           if (p_obstacle_u_forward_) {
               for (grid_map::LineIterator iterator(global_map_, left_top, right_top);
                   !iterator.isPastEnd(); ++iterator) {
-                global_map_.at("traversability", *iterator) = 100.0;
+                const grid_map::Index index(*iterator);
+                traversability_data(index(0), index(1)) = 100.0;
               }
           }
 
           if (p_obstacle_u_backward_) {
               for (grid_map::LineIterator iterator(global_map_, left_bottom, right_bottom);
                   !iterator.isPastEnd(); ++iterator) {
-                global_map_.at("traversability", *iterator) = 100.0;
+                const grid_map::Index index(*iterator);
+                traversability_data(index(0), index(1)) = 100.0;
               }
           }
 
