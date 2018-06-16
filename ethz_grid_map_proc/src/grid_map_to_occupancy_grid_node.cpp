@@ -65,6 +65,18 @@ public:
     } else {
       global_map_["fused"] = global_map_["obstacle"];
     }
+
+    // Set all unknown space to free
+    if (p_unknown_space_to_free_) {
+      grid_map::Matrix& fused_data = global_map_["fused"];
+      for (grid_map::GridMapIterator iterator(global_map_); !iterator.isPastEnd(); ++iterator) {
+        const grid_map::Index index(*iterator);
+        if (std::isnan(fused_data(index(0), index(1)))) {
+          fused_data(index(0), index(1)) = 0;
+        }
+      }
+    }
+
     // publish fused map
     if (global_occ_grid_pub_.getNumSubscribers() > 0) {
       nav_msgs::OccupancyGrid occupancy_grid;
@@ -217,11 +229,15 @@ public:
     p_obstacle_u_backward_ = config.obstacle_u_backward;
     p_obstacle_u_size_ = config.obstacle_u_size;
     p_fusing_enabled_ = config.fusing_enabled;
+    p_unknown_space_to_free_ = config.unknown_space_to_free;
     
-    ROS_INFO("Reconfigure Request. Occupied threshold: %f clear radius:%f, of: %s ,ob: %s, fusing: %s", p_occupied_threshold_, p_goal_clear_radius_,
+    ROS_INFO("Reconfigure Request. Occupied threshold: %f clear radius:%f, of: %s ,ob: %s, fusing: %s, unknown_space_to_free: %s",
+             p_occupied_threshold_,
+             p_goal_clear_radius_,
              config.obstacle_u_forward?"True":"False",
              config.obstacle_u_backward?"True":"False",
-             config.fusing_enabled?"True":"False");
+             config.fusing_enabled?"True":"False",
+             config.unknown_space_to_free?"True":"False");
   }
   
 
@@ -255,6 +271,7 @@ private:
   bool p_obstacle_u_backward_;
   float p_obstacle_u_size_;
   bool p_fusing_enabled_;
+  bool p_unknown_space_to_free_;
   
   nav_msgs::Path path;
 };
