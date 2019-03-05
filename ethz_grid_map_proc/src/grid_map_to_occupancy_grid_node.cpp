@@ -56,7 +56,8 @@ public:
       grid_map::Matrix& fused_data = global_map_["fused"];
       for (grid_map::GridMapIterator iterator(global_map_); !iterator.isPastEnd(); ++iterator) {
         const grid_map::Index index(*iterator);
-        if ( obstacle_data(index(0), index(1)) < traversability_data(index(0), index(1))){
+
+        if (obstacle_data(index(0), index(1)) < traversability_data(index(0), index(1)) || std::isnan(obstacle_data(index(0), index(1)))) {
           fused_data(index(0), index(1)) = traversability_data(index(0), index(1));
         } else {
           fused_data(index(0), index(1)) = obstacle_data(index(0), index(1));
