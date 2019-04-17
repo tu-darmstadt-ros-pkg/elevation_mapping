@@ -18,11 +18,11 @@
   </node>
 
   <!-- Throttle Depth cam points -->
-  <node pkg="topic_tools" type="throttle" name="front_rgbd_cam_depth_points_throttle" args="messages /front_rgbd_cam/depth/points 1.0 /cloud_laser_depth_fused" output="screen" respawn="true">
+  <node pkg="topic_tools" type="throttle" name="front_rgbd_cam_depth_points_throttle" args="messages /front_rgbd_cam/depth/color/points 1.0 /cloud_laser_depth_fused" output="screen" respawn="true">
     <param name="lazy" value="true"/>
   </node>
 
-  <node pkg="topic_tools" type="throttle" name="back_rgbd_cam_depth_points_throttle" args="messages /back_rgbd_cam/depth/points 1.0 /cloud_laser_depth_fused" output="screen" respawn="true">
+  <node pkg="topic_tools" type="throttle" name="back_rgbd_cam_depth_points_throttle" args="messages /back_rgbd_cam/depth/color/points 1.0 /cloud_laser_depth_fused" output="screen" respawn="true">
     <param name="lazy" value="true"/>
   </node> 
 
