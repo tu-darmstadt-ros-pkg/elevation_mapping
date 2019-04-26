@@ -49,8 +49,14 @@ public:
     layers_to_use.push_back("obstacle");
     global_map_.addDataFrom(local_obstacle_map, true, true, false, layers_to_use);
 
-    // fuse obstacle map with traversability map
-    if (p_fusing_enabled_) {
+    if (p_enable_obstacle_map && !p_enable_traversability_map) {
+      // Only obstacle map
+      global_map_["fused"] = global_map_["obstacle"];
+    } else if (p_enable_traversability_map && !p_enable_obstacle_map) {
+      // Only traversability map
+      global_map_["fused"] = global_map_["traversability"];
+    } else {
+      // Fuse both
       grid_map::Matrix& obstacle_data   = global_map_["obstacle"];
       grid_map::Matrix& traversability_data = global_map_["traversability"];
       grid_map::Matrix& fused_data = global_map_["fused"];
@@ -63,8 +69,6 @@ public:
           fused_data(index(0), index(1)) = obstacle_data(index(0), index(1));
         }
       }
-    } else {
-      global_map_["fused"] = global_map_["obstacle"];
     }
 
     // Set all unknown space to free
@@ -229,15 +233,17 @@ public:
     p_obstacle_u_forward_ = config.obstacle_u_forward;
     p_obstacle_u_backward_ = config.obstacle_u_backward;
     p_obstacle_u_size_ = config.obstacle_u_size;
-    p_fusing_enabled_ = config.fusing_enabled;
+    p_enable_obstacle_map = config.enable_obstacle_map;
+    p_enable_traversability_map = config.enable_traversability_map;
     p_unknown_space_to_free_ = config.unknown_space_to_free;
     
-    ROS_INFO("Reconfigure Request. Occupied threshold: %f clear radius:%f, of: %s ,ob: %s, fusing: %s, unknown_space_to_free: %s",
-             p_occupied_threshold_,
-             p_goal_clear_radius_,
+    ROS_INFO("Reconfigure Request. Occupied threshold: %f clear radius:%f, of: %s ,ob: %s, obstacle_map: %s, traversability_map: %s, unknown_space_to_free: %s",
+             static_cast<double>(p_occupied_threshold_),
+             static_cast<double>(p_goal_clear_radius_),
              config.obstacle_u_forward?"True":"False",
              config.obstacle_u_backward?"True":"False",
-             config.fusing_enabled?"True":"False",
+             config.enable_obstacle_map?"True":"False",
+             config.enable_traversability_map?"True":"False",
              config.unknown_space_to_free?"True":"False");
   }
   
@@ -271,7 +277,8 @@ private:
   bool p_obstacle_u_forward_;
   bool p_obstacle_u_backward_;
   float p_obstacle_u_size_;
-  bool p_fusing_enabled_;
+  bool p_enable_obstacle_map;
+  bool p_enable_traversability_map;
   bool p_unknown_space_to_free_;
   
   nav_msgs::Path path;
