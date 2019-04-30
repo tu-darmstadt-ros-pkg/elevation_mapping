@@ -16,15 +16,14 @@
   <node pkg="topic_tools" type="relay" name="scan_matched_points2_relay" args="/scan_matched_points2 /cloud_laser_depth_fused">
     <param name="lazy" value="true"/>
   </node>
-
-  <!-- Throttle Depth cam points -->
-  <node pkg="topic_tools" type="throttle" name="front_rgbd_cam_depth_points_throttle" args="messages /front_rgbd_cam/depth/color/points 1.0 /cloud_laser_depth_fused" output="screen" respawn="true">
+  
+  <node pkg="topic_tools" type="relay" name="front_rgbd_cam_depth_points_relay" args="/front_rgbd_cam/depth/color/points_throttle /cloud_laser_depth_fused">
     <param name="lazy" value="true"/>
   </node>
-
-  <node pkg="topic_tools" type="throttle" name="back_rgbd_cam_depth_points_throttle" args="messages /back_rgbd_cam/depth/color/points 1.0 /cloud_laser_depth_fused" output="screen" respawn="true">
+  
+  <node pkg="topic_tools" type="relay" name="back_rgbd_cam_depth_points_relay" args="/back_rgbd_cam/depth/color/points_throttle /cloud_laser_depth_fused">
     <param name="lazy" value="true"/>
-  </node> 
+  </node>
 
   <!-- Crop Z around robot -->
   <node pkg="nodelet" type="nodelet" name="scan_z_filter" output="screen" respawn="false" args="standalone pcl/PassThrough">
@@ -33,7 +32,7 @@
       <param name="filter_limit_max" value="1.5"/>
       <param name="input_frame" value="base_stabilized"/>
       <remap from="~input" to="/cloud_laser_depth_fused"/>
-      <remap from="~output" to="/elevation_mapping/cloud_in"/>
+      <remap from="~output" to="/cloud_laser_depth_fused_cropped"/>
   </node>
 
   <node pkg="elevation_mapping" type="pose_to_pose_with_covariance" name="pose_to_pose_with_covariance" output="screen" respawn="false">
