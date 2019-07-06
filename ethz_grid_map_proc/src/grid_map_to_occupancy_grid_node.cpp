@@ -3,6 +3,7 @@
 #include <nav_msgs/OccupancyGrid.h>
 #include <nav_msgs/Path.h>
 #include <std_msgs/String.h>
+#include <hector_obstacle_msgs/ObstacleModel.h>
 
 #include <dynamic_reconfigure/server.h>
 #include <ethz_grid_map_proc/GridMapProcConfig.h>
@@ -14,11 +15,11 @@ public:
   GridMapToOccupancyGrid(ros::NodeHandle nh, ros::NodeHandle pnh) : nh_(nh) ,pnh_(pnh)
   {
     dyn_rec_server_.reset(new ReconfigureServer(config_mutex_, pnh_));
-    dyn_rec_server_->setCallback(boost::bind(&GridMapToOccupancyGrid::reconfigureCallback, this, _1, _2));  
-      
-      
+    dyn_rec_server_->setCallback(boost::bind(&GridMapToOccupancyGrid::reconfigureCallback, this, _1, _2));
+
     global_map_.add("obstacle");
     global_map_.add("traversability");
+    global_map_.add("obstacle_objects");
     global_map_.add("fused");
          //grid_map_.add("update_time");
     global_map_.setGeometry(grid_map::Length(20.0, 20.0), 0.05);
@@ -35,7 +36,8 @@ public:
 
 
     obstacle_grid_map_sub_ = nh_.subscribe("/obstacle_map_throttled", 1, &GridMapToOccupancyGrid::obstacleMapCallback, this);
-    
+    obstacle_object_sub_ = nh_.subscribe("/hector_obstacle_server/obstacle_model", 1, &GridMapToOccupancyGrid::obstacleObjectCallback, this);
+
     grid_map_sub_ = nh_.subscribe("/traversability_estimation/traversability_map", 1, &GridMapToOccupancyGrid::gridMapCallback, this);
     syscommand_sub_ = nh_.subscribe("/syscommand", 1, &GridMapToOccupancyGrid::sysCommandCallback, this);
     path_sub_ = nh_.subscribe("/path_to_follow", 1, &GridMapToOccupancyGrid::pathCallback, this);
@@ -71,6 +73,27 @@ public:
       }
     }
 
+    // add obstacle model
+    if(!obstacle_model_.model.empty())
+    {
+      for( const hector_obstacle_msgs::Obstacle& obstacle : obstacle_model_.model)
+      {
+        if(obstacle.shape_type == hector_obstacle_msgs::Obstacle::SHAPE_LINE_WITH_ENDPOINTS)
+        {
+          if(obstacle.points.size() == 2)
+          {
+
+            grid_map::Position start(obstacle.points[0].x, obstacle.points[0].y);
+            grid_map::Position end(obstacle.points[1].x, obstacle.points[1].y);
+
+            for (grid_map::LineIterator iterator(global_map_, start, end); !iterator.isPastEnd(); ++iterator) {
+              global_map_.at("fused", *iterator) = 100.0;
+            }
+          }
+        }
+      }
+    }
+
     // Set all unknown space to free
     if (p_unknown_space_to_free_) {
       grid_map::Matrix& fused_data = global_map_["fused"];
@@ -96,7 +119,12 @@ public:
       grid_map_pub_.publish(grid_map_msg);
     }
   }
-    
+
+  void obstacleObjectCallback(const hector_obstacle_msgs::ObstacleModelConstPtr msg)
+  {
+    obstacle_model_ = *msg;
+  }
+
   void gridMapCallback(const grid_map_msgs::GridMapConstPtr msg)
   {
     grid_map::GridMap local_grid_map;
@@ -254,9 +282,10 @@ private:
   ros::Publisher global_occ_grid_pub_;
 
   ros::Publisher grid_map_pub_;
-    
+
   ros::Subscriber obstacle_grid_map_sub_;
   ros::Subscriber grid_map_sub_;
+  ros::Subscriber obstacle_object_sub_;
   ros::Subscriber syscommand_sub_;
   ros::Subscriber path_sub_;
   
@@ -265,7 +294,7 @@ private:
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
 
-
+  hector_obstacle_msgs::ObstacleModel obstacle_model_;
   grid_map::GridMap global_map_;
   
   typedef dynamic_reconfigure::Server<ethz_grid_map_proc::GridMapProcConfig> ReconfigureServer;

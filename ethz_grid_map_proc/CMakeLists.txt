@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   nav_msgs
   roscpp
   dynamic_reconfigure
+  hector_obstacle_msgs
 )
 
 generate_dynamic_reconfigure_options(
