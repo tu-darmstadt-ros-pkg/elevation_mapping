@@ -15,6 +15,7 @@
 #include "elevation_mapping/WeightedEmpiricalCumulativeDistributionFunction.hpp"
 
 // Grid Map
+#include <grid_map_msgs/SetGridMap.h>
 #include <grid_map_msgs/GetGridMap.h>
 #include <grid_map_msgs/ProcessFile.h>
 
@@ -40,6 +41,8 @@
 
 
 namespace elevation_mapping {
+
+enum class InitializationMethods {PlanarFloorInitializer};
 
 /*!
  * The elevation mapping main class. Coordinates the ROS interfaces, the timing,
@@ -98,12 +101,20 @@ class ElevationMapping
   bool fuseEntireMap(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
 
   /*!
-   * ROS service callback function to return a submap of the elevation map.
-   * @param request the ROS service request defining the location and size of the submap.
-   * @param response the ROS service response containing the requested submap.
+   * ROS service callback function to return a submap of the fused elevation map.
+   * @param request the ROS service request defining the location and size of the fused submap.
+   * @param response the ROS service response containing the requested fused submap.
    * @return true if successful.
    */
-  bool getSubmap(grid_map_msgs::GetGridMap::Request& request, grid_map_msgs::GetGridMap::Response& response);
+  bool getFusedSubmap(grid_map_msgs::GetGridMap::Request& request, grid_map_msgs::GetGridMap::Response& response);
+
+  /*!
+   * ROS service callback function to return a submap of the raw elevation map.
+   * @param request the ROS service request defining the location and size of the raw submap.
+   * @param response the ROS service response containing the requested raw submap.
+   * @return true if successful.
+   */
+  bool getRawSubmap(grid_map_msgs::GetGridMap::Request& request, grid_map_msgs::GetGridMap::Response& response);
 
   /*!
    * Clears all data of the elevation map.
@@ -112,6 +123,18 @@ class ElevationMapping
    * @return true if successful.
    */
   bool clearMap(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
+
+  /*!
+  * Allows for setting the individual layers of the elevation map through a service call. 
+  * The layer mask can be used to only set certain cells and not the entire map. Cells
+  * containing NAN in the mask are not set, all the others are set. If the layer mask is
+  * not supplied, the entire map will be set in the intersection of both maps. The
+  * provided map can be of different size and position than the map that will be altered.
+  * @param request the ROS service request.
+  * @param response the ROS service response.
+  * @return true if successful.
+  */
+  bool maskedReplace(grid_map_msgs::SetGridMap::Request& request, grid_map_msgs::SetGridMap::Response& response);
 
   /*!
    * Saves the grid map with all layers to a ROS bag file.
@@ -174,6 +197,11 @@ class ElevationMapping
    * Stop the map update timer.
    */
   void stopMapUpdateTimer();
+  
+  /*!
+   * Initializes a submap around the robot of the elevation map with a constant height
+   */
+  bool initializeElevationMap();
 
   //! ROS nodehandle.
   ros::NodeHandle& nodeHandle_;
@@ -184,8 +212,10 @@ class ElevationMapping
 
   //! ROS service servers.
   ros::ServiceServer fusionTriggerService_;
-  ros::ServiceServer submapService_;
+  ros::ServiceServer fusedSubmapService_;
+  ros::ServiceServer rawSubmapService_;
   ros::ServiceServer clearMapService_;
+  ros::ServiceServer maskedReplaceService_;
   ros::ServiceServer saveMapService_;
 
   //! Callback thread for the fusion services.
@@ -199,6 +229,9 @@ class ElevationMapping
 
   //! Size of the cache for the robot pose messages.
   int robotPoseCacheSize_;
+
+  //! Frame ID of the elevation map
+  std::string mapFrameId_;
 
   //! TF listener and broadcaster.
   tf::TransformListener transformListener_;
@@ -259,6 +292,30 @@ class ElevationMapping
 
   //! Becomes true when corresponding poses and point clouds can be found
   bool receivedFirstMatchingPointcloudAndPose_;
+
+  //! Name of the mask layer used in the masked replace service
+  std::string maskedReplaceServiceMaskLayerName_;
+
+  //! Enables initialization of the elevation map
+  bool initializeElevationMap_;
+
+  //! Enum to choose the initialization method
+  int initializationMethod_;
+
+  //! Width of submap of the elevation map with a constant height
+  double lengthInXInitSubmap_;
+  
+  //! Height of submap of the elevation map with a constant height
+  double lengthInYInitSubmap_;
+  
+  //! Margin of submap of the elevation map with a constant height
+  double marginInitSubmap_;
+
+  //! Targe frame to get the init height of the elevation map
+  std::string targetFrameInitSubmap_;
+
+  //! Additional offset of the height value
+  double initSubmapHeightOffset_;
 };
 
 } /* namespace */
