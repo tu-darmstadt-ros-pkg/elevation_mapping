@@ -9,8 +9,9 @@ The Robot-Centric Elevation Mapping packages have been tested under ROS Melodic 
 The source code is released under a [BSD 3-Clause license](LICENSE).
 
 **Author: Péter Fankhauser<br />
+Co-Author: Maximilian Wulf<br />
 Affiliation: [ANYbotics](https://www.anybotics.com/)<br />
-Maintainer: Péter Fankhauser, pfankhauser@anybotics.com<br />**
+Maintainer: Maximilian Wulf, mwulf@anybotics.com<br />**
 
 This projected was initially developed at ETH Zurich (Autonomous Systems Lab & Robotic Systems Lab).
 
@@ -90,6 +91,24 @@ Run the unit tests with
 
 In order to get the Robot-Centric Elevation Mapping to run with your robot, you will need to adapt a few parameters. It is the easiest if duplicate and adapt all the parameter files that you need to change from the `elevation_mapping_demos` package (e.g. the `simple_demo` example). These are specifically the parameter files in `config` and the launch file from the `launch` folder.
 
+### TurtleBot3 Waffle Simulation
+
+A running example is provided, making use of the Turtlebot3 simulation environment. This example can be used to test elevation mapping, as a starting point for further integration.
+
+To start with, the Turtlebot3 simulation dependencies need to be installed:
+
+    sudo apt install ros-melodic-turtlebot3*
+
+The elevation mapping demo together with the turtlebot3 simulation can be started with
+
+    roslaunch elevation_mapping_demos turtlesim3_waffle_demo.launch
+
+To control the robot with a keyboard, a new terminal window needs to be opened (remember to source your ROS environment). Then run
+
+    export TURTLEBOT3_MODEL=waffle
+    roslaunch turtlebot3_teleop turtlebot3_teleop_key.launch
+
+Velocity inputs can be sent to the robot by pressing the keys `a`, `w`,`d`, `x`. To stop the robot completely, press `s`.
 
 ## Nodes
 
@@ -190,6 +209,24 @@ This is the main Robot-Centric Elevation Mapping node. It uses the distance sens
 
         rosservice call /elevation_mapping/save_map "file_path: '/home/integration/elevation_map.bag' topic_name: ''"
 
+* **`load_map`** ([grid_map_msgs/ProcessFile])
+
+    Loads the fused grid map and raw grid map from rosbag files. Field `topic_name` must be a base name, i.e. no leading slash character (/). If field `topic_name` is empty, then `elevation_map` is used per default. Example with default topic name
+
+        rosservice call /elevation_mapping/load_map "file_path: '/home/integration/elevation_map.bag' topic_name: ''"
+
+* **`disable_updates`** ([std_srvs/Empty])
+
+    Stops updating the elevation map with sensor input. Trigger the update stopping with
+
+        rosservice call /elevation_mapping/disable_updates {}
+
+* **`enable_updates`** ([std_srvs/Empty])
+
+    Start updating the elevation map with sensor input. Trigger the update starting with
+
+        rosservice call /elevation_mapping/enable_updates {}
+
 #### Parameters
 
 * **`point_cloud_topic`** (string, default: "/points")
@@ -203,6 +240,10 @@ This is the main Robot-Centric Elevation Mapping node. It uses the distance sens
 * **`base_frame_id`** (string, default: "/robot")
 
     The id of the robot base tf frame.
+
+* **`sensor_frame_id`** (string, default: "/sensor")
+
+    The id of the depth sensor tf frame.
 
 * **`map_frame_id`** (string, default: "/map")
 
@@ -269,7 +310,11 @@ This is the main Robot-Centric Elevation Mapping node. It uses the distance sens
 
 * **`visibility_cleanup_rate`** (double, default: 1.0)
 
-    The rate (in Hz) at which the visibility constraint is performed.
+    The rate (in Hz) at which the visibility clean-up is performed.
+
+* **`enable_continuous_cleanup`** (bool, default: false)
+
+    Enable/disable a continuous clean-up of the elevation map. If enabled, on arrival of each new sensor data the elevation map will be cleared and filled up only with the latest data from the sensor. When continuous clean-up is enabled, visibility clean-up will automatically be disabled since it is not needed in this case.
 
 * **`scanning_duration`** (double, default: 1.0)
 
