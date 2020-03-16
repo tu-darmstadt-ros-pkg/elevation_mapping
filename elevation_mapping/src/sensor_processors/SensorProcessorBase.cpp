@@ -66,8 +66,9 @@ bool SensorProcessorBase::process(
 {
   ros::Time timeStamp;
   timeStamp.fromNSec(1000 * pointCloudInput->header.stamp);
+  // Assume that input frame == sensor frame
+  sensorFrameId_ = pointCloudInput->header.frame_id;
   if (!updateTransformations(timeStamp)) return false;
-
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloudSensorFrame(new pcl::PointCloud<pcl::PointXYZRGB>);
   transformPointCloud(pointCloudInput, pointCloudSensorFrame, sensorFrameId_);
   filterPointCloud(pointCloudSensorFrame);
