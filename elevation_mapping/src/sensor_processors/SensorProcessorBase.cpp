@@ -43,9 +43,7 @@ SensorProcessorBase::~SensorProcessorBase() {}
 bool SensorProcessorBase::readParameters()
 {
   nodeHandle_.param("sensor_frame_id", sensorFrameId_, std::string("")); // TODO Fail if parameters are not found.
-  if (sensorFrameId_ == "") {
-    useHeaderAsSensorFrameId_ = true;
-  }
+  useHeaderAsSensorFrameId_ = (sensorFrameId_ == "");
   nodeHandle_.param("robot_base_frame_id", robotBaseFrameId_, std::string("/robot"));
   nodeHandle_.param("map_frame_id", mapFrameId_, std::string("/map"));
 
