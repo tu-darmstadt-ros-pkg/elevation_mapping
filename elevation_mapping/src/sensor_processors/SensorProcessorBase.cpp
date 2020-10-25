@@ -31,7 +31,7 @@ SensorProcessorBase::SensorProcessorBase(ros::NodeHandle& nodeHandle, tf::Transf
       transformListener_(transformListener),
       ignorePointsUpperThreshold_(std::numeric_limits<double>::infinity()),
       ignorePointsLowerThreshold_(-std::numeric_limits<double>::infinity()),
-      useHeaderAsSensorFrameId_(false)
+      useHeaderAsSensorFrameId_(false),
       applyVoxelGridFilter_(false),
       firstTfAvailable_(false) {
   pcl::console::setVerbosityLevel(pcl::console::L_ERROR);
