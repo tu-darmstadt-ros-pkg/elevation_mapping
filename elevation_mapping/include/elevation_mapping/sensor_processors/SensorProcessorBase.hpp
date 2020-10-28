@@ -163,9 +163,6 @@ public:
   //! TF frame id of the range sensor for the point clouds.
   std::string sensorFrameId_;
 
-  //! Use the message header frame id as the sensor frame
-  bool useHeaderAsSensorFrameId_;
-
   //! Ignore points above this height in map frame.
   double ignorePointsUpperThreshold_;
 

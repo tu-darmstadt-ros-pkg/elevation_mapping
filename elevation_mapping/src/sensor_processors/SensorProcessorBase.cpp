@@ -30,8 +30,7 @@ SensorProcessorBase::SensorProcessorBase(ros::NodeHandle& nodeHandle, tf::Transf
     : nodeHandle_(nodeHandle),
       transformListener_(transformListener),
       ignorePointsUpperThreshold_(std::numeric_limits<double>::infinity()),
-      ignorePointsLowerThreshold_(-std::numeric_limits<double>::infinity()),
-      useHeaderAsSensorFrameId_(false)
+      ignorePointsLowerThreshold_(-std::numeric_limits<double>::infinity())
 {
   pcl::console::setVerbosityLevel(pcl::console::L_ERROR);
   transformationSensorToMap_.setIdentity();
@@ -42,8 +41,7 @@ SensorProcessorBase::~SensorProcessorBase() {}
 
 bool SensorProcessorBase::readParameters()
 {
-  nodeHandle_.param("sensor_frame_id", sensorFrameId_, std::string("")); // TODO Fail if parameters are not found.
-  useHeaderAsSensorFrameId_ = (sensorFrameId_ == "");
+  nodeHandle_.param("sensor_frame_id", sensorFrameId_, std::string("/sensor")); // TODO Fail if parameters are not found.
   nodeHandle_.param("robot_base_frame_id", robotBaseFrameId_, std::string("/robot"));
   nodeHandle_.param("map_frame_id", mapFrameId_, std::string("/map"));
 
@@ -68,10 +66,8 @@ bool SensorProcessorBase::process(
 {
   ros::Time timeStamp;
   timeStamp.fromNSec(1000 * pointCloudInput->header.stamp);
-  if (useHeaderAsSensorFrameId_) {
-    sensorFrameId_ = pointCloudInput->header.frame_id;
-  }
   if (!updateTransformations(timeStamp)) return false;
+
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloudSensorFrame(new pcl::PointCloud<pcl::PointXYZRGB>);
   transformPointCloud(pointCloudInput, pointCloudSensorFrame, sensorFrameId_);
   filterPointCloud(pointCloudSensorFrame);
